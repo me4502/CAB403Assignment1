@@ -1,4 +1,8 @@
 #ifndef CAB403ASSIGNMENT1_COMMON_H
 #define CAB403ASSIGNMENT1_COMMON_H
+#include <stdio.h>
+#include <stdlib.h>
+
+#define DEFAULT_PORT 12345
 
 #endif //CAB403ASSIGNMENT1_COMMON_H
