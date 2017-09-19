@@ -6,7 +6,7 @@ int serverPort;
 int main(int argc, char ** argv) {
     switch(argc) {
         case 1:
-            printf("Too few arguments provided. Usage: <program> <server IP> <server port>\n");
+            printf("Too few arguments provided. Usage: %s <server IP> <server port>\n", argv[0]);
             return 1;
         case 2:
             serverAddress = argv[1];
