@@ -3,10 +3,10 @@
 char * serverAddress;
 int serverPort;
 
-int main(int argc, char * argv[]) {
+int main(int argc, char ** argv) {
     switch(argc) {
         case 1:
-            printf("Too few arguments provided. Usage: <program> <server IP> <server port>");
+            printf("Too few arguments provided. Usage: <program> <server IP> <server port>\n");
             return 1;
         case 2:
             serverAddress = argv[1];
@@ -21,12 +21,10 @@ int main(int argc, char * argv[]) {
             return 1;
     }
 
-    if (serverPort <= 0 || serverPort >= 65535) {
-        printf("Invalid port provided, %d. Please provide a port between 1 and %d", serverPort, 65535);
-        return 1;
-    }
+    validatePort(serverPort);
+
     if (serverAddress == NULL) {
-        printf("Please provide a server address!");
+        printf("Please provide a server address!\n");
         return 1;
     }
 

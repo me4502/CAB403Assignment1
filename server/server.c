@@ -15,10 +15,7 @@ int main(int argc, char ** argv) {
             return 1;
     }
 
-    if (serverPort <= 0 || serverPort >= 65535) {
-        printf("Invalid port provided, %d. Please provide a port between 1 and %d", serverPort, 65535);
-        return 1;
-    }
+    validatePort(serverPort);
 
     printf("%d", serverPort);
 }
