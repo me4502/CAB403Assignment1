@@ -3,4 +3,7 @@ project(CAB403Assignment1 C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(CAB403Assignment1 main.c)
+set(SOURCE_FILES server/server.c client/client.c common/common.c)
+
+add_executable(Server server/server.c common/common.c)
+add_executable(Client client/client.c common/common.c)

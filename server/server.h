@@ -1,0 +1,5 @@
+#ifndef CAB403ASSIGNMENT1_SERVER_H
+#define CAB403ASSIGNMENT1_SERVER_H
+#include "../common/common.h"
+
+#endif //CAB403ASSIGNMENT1_SERVER_H
