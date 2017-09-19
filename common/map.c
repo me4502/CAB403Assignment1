@@ -1,5 +1,4 @@
 #include "map.h"
-#include <stdio.h>
 
 Map createMap(int startingLength) {
     Map map;
