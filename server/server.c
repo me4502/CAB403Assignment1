@@ -18,4 +18,11 @@ int main(int argc, char ** argv) {
     validatePort(serverPort);
 
     printf("%d", serverPort);
+
+    signal(SIGINT, interruptHandler);
+    signal(SIGQUIT, interruptHandler);
+}
+
+void interruptHandler(int signal) {
+    // TODO Handle required socket/thread closures.
 }
