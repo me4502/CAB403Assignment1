@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <memory.h>
 #include "map.h"
 
 #define DEFAULT_PORT 12345
