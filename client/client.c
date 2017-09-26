@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <curses.h>
 
 char * serverAddress;
 int serverPort;
@@ -32,4 +33,31 @@ int main(int argc, char ** argv) {
     }
 
     printf("%s:%d", serverAddress, serverPort);
+
+    setupScreen();
+
+    atexit(cleanupScreen);
+}
+
+void setupScreen() {
+    // Setup ncurses session
+    initscr();
+
+    // Setup input handling
+    noecho();
+    keypad(stdscr, TRUE);
+    mousemask(ALL_MOUSE_EVENTS, NULL);
+    timeout(0);
+
+    // Remove the cursor
+    curs_set(0);
+
+    // Clear the screen
+    clear();
+}
+
+void cleanupScreen() {
+    curs_set(1);
+    clear();
+    endwin();
 }
