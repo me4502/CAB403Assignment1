@@ -16,4 +16,12 @@ typedef struct str_pair {
  */
 int validatePort(int port);
 
+/**
+ * Copy a string from one char * to another.
+ *
+ * @param from The from string
+ * @param to The to string
+ */
+void copy_string(char * from, char * to);
+
 #endif //CAB403ASSIGNMENT1_COMMON_H

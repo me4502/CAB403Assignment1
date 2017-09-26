@@ -10,3 +10,7 @@ int validatePort(int port) {
 
     return 0;
 }
+
+void copy_string(char * from, char * to) {
+    while ((* to++ = * from++) != '\0');
+}

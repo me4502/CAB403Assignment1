@@ -33,18 +33,6 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
-    for (int i = 0; i < accounts->length; i++) {
-        if (accounts->entries[i] == NULL) {
-            continue;
-        }
-        printf("%s=%s\n", (char *) accounts->entries[i]->key, (char *) accounts->entries[i]->value);
-    }
-
-    for (int i = 0; i < words->length; i++) {
-        StrPair * strPair = (StrPair *) getValueAt(words, i);
-        printf("%s %s\n", strPair->a, strPair->b);
-    }
-
     printf("%d\n", serverPort);
 
     signal(SIGINT, interruptHandler);
@@ -69,7 +57,7 @@ int loadAccounts() {
         if (lineNum == 0) {
             continue;
         }
-        char * token = strtok(line, "\t ");
+        char * token = strtok(line, "\t\n ");
         int tokenNumber = 0;
 
         char * username = NULL;
@@ -77,11 +65,13 @@ int loadAccounts() {
 
         while (token != NULL) {
             if (tokenNumber == 0) {
-                username = token;
+                username = malloc(strlen(token) * sizeof(char));
+                copy_string(token, username);
             } else if (tokenNumber == 1) {
-                password = token;
+                password = malloc(strlen(token) * sizeof(char));
+                copy_string(token, password);
             }
-            token = strtok(NULL, "\t ");
+            token = strtok(NULL, "\t\n ");
             tokenNumber ++;
         }
 
@@ -125,10 +115,12 @@ int loadWords() {
         while (token != NULL) {
             switch (tokenNumber) {
                 case 0:
-                    pair->a = token;
+                    pair->a = malloc(strlen(token) * sizeof(char));
+                    copy_string(token, pair->a);
                     break;
                 case 1:
-                    pair->b = token;
+                    pair->b = malloc(strlen(token) * sizeof(char));
+                    copy_string(token, pair->b);
                     break;
                 default:
                     printf("Malformed word pair on line: %d.", lineNum + 1);
