@@ -1,18 +1,16 @@
 #ifndef CAB403ASSIGNMENT1_MAP_H
 #define CAB403ASSIGNMENT1_MAP_H
 #include <stdbool.h>
-#include <stdlib.h>
-#include <stddef.h>
 
 typedef struct map_entry {
-    char * key;
-    char * value;
+    void * key;
+    void * value;
 } * MapEntry;
 
 typedef struct map {
     int length;
     MapEntry * entries;
-} Map;
+} * Map;
 
 /**
  * Creates a map of the given length.
@@ -29,7 +27,7 @@ Map createMap(int startingLength);
  * @param key The key
  * @return The value, or NULL
  */
-char * getValue(Map map, char * key);
+void * getValue(Map map, void * key);
 
 /**
  * Put an entry in the Map.
@@ -38,7 +36,7 @@ char * getValue(Map map, char * key);
  * @param key The key
  * @param value The value
  */
-void putEntry(Map map, char * key, char * value);
+void putEntry(Map map, void * key, void * value);
 
 /**
  * Removes an entry from the Map.
@@ -47,7 +45,7 @@ void putEntry(Map map, char * key, char * value);
  * @param key The key to remove
  * @return If an entry was removed
  */
-bool removeEntry(Map map, char * key);
+bool removeEntry(Map map, void * key);
 
 /**
  * Gets if a Map contains a key.
@@ -56,13 +54,13 @@ bool removeEntry(Map map, char * key);
  * @param key The key
  * @return If the map contains the key
  */
-bool containsEntry(Map map, char * key);
+bool containsEntry(Map map, void * key);
 
 /**
  * Frees the memory allocated to this map.
  *
  * @param map The map
  */
-void cleanupMap(Map map);
+void freeMap(Map map);
 
 #endif //CAB403ASSIGNMENT1_MAP_H

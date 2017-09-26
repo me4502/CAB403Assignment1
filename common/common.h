@@ -1,13 +1,12 @@
 #ifndef CAB403ASSIGNMENT1_COMMON_H
 #define CAB403ASSIGNMENT1_COMMON_H
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <memory.h>
-#include "map.h"
 
 #define DEFAULT_PORT 12345
+
+typedef struct str_pair {
+    char * a;
+    char * b;
+} StrPair;
 
 /**
  * Validates that the given port is valid.

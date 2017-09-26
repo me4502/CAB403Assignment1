@@ -3,7 +3,6 @@
 #define SERVER
 
 #include "../common/common.h"
-#include <signal.h>
 
 /**
  * SIGINT Handler.
@@ -18,5 +17,12 @@ void interruptHandler(int signal);
  * @return 1 if an error occurred
  */
 int loadAccounts();
+
+/**
+ * Loads the word pairs from file.
+ *
+ * @return 1 if an error occured
+ */
+int loadWords();
 
 #endif //CAB403ASSIGNMENT1_SERVER_H

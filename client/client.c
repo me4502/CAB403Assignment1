@@ -1,5 +1,8 @@
 #include "client.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 char * serverAddress;
 int serverPort;
 
