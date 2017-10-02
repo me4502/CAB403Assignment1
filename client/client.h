@@ -4,6 +4,8 @@
 
 #include "../common/common.h"
 
+#include <stdbool.h>
+
 typedef enum screen_type {
     LOGIN_SCREEN,
     MENU_SCREEN,
@@ -11,8 +13,10 @@ typedef enum screen_type {
     LEADERBOARD_SCREEN
 } ScreenType;
 
-void setupScreen();
+void drawWelcomeText();
 
-void cleanupScreen();
+void drawScreen(ScreenType screenType);
+
+bool authenticateUser(char username[], char password[]);
 
 #endif //CAB403ASSIGNMENT1_CLIENT_H
