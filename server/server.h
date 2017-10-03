@@ -25,4 +25,9 @@ int loadAccounts();
  */
 int loadWords();
 
+/**
+ * Ensures everything is wrapped up and ready for a clean exit
+ */
+void finishUp();
+
 #endif //CAB403ASSIGNMENT1_SERVER_H

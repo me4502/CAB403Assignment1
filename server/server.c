@@ -6,6 +6,7 @@
 #include <signal.h>
 #include "../common/map.h"
 #include "../common/list.h"
+#include <unistd.h>
 
 Map accounts;
 List words;
@@ -37,6 +38,13 @@ int main(int argc, char ** argv) {
     printf("%d\n", serverPort);
 
     signal(SIGINT, interruptHandler);
+    int i = 0;
+    while (true) {
+        i++;
+        printf("%d\n", i);
+        sleep(10);
+    }
+    return 0;
 }
 
 int loadAccounts() {
@@ -148,5 +156,15 @@ int loadWords() {
 }
 
 void interruptHandler(int signal) {
+    if (signal == SIGINT) {
+        // I put the \n at the start so it reads nicer :)
+        printf("\nReceived SIGINT\nI should exit cleanly now.\n");
+        finishUp();
+        exit(0);
+    }
+}
+
+void finishUp() {
     // TODO Handle required socket/thread closures.
+    return;
 }
