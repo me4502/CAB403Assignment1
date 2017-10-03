@@ -10,7 +10,8 @@ typedef enum screen_type {
     LOGIN_SCREEN,
     MENU_SCREEN,
     GAME_OVER_SCREEN,
-    LEADERBOARD_SCREEN
+    LEADERBOARD_SCREEN,
+    GAME_SCREEN
 } ScreenType;
 
 void drawWelcomeText();
