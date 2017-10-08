@@ -81,7 +81,7 @@ void _drawMenuScreen() {
         printf("<3> Quit\n\n");
         printf("Selection option 1-3 -> ");
 
-        status = scanf( "%d", &choice);
+        status = scanf("%d", &choice);
         if (status == 0) {
             // If the input was invalid, clear out the input buffer.
             int c;
@@ -102,6 +102,12 @@ void _drawMenuScreen() {
             drawScreen(MENU_SCREEN);
             break;
     }
+}
+
+void _drawWinScreen() {
+    printf("\nGame over\n\n\n");
+    printf("Well done %s! You won this round of Hangman!\n\n\n", username);
+    drawScreen(MENU_SCREEN);
 }
 
 void _drawGameOverScreen() {
@@ -126,7 +132,29 @@ void _drawLeaderboardScreen() {
 }
 
 void _drawGameScreen() {
-    drawScreen(GAME_OVER_SCREEN);
+    ClientGameState gameState = startGame();
+    while (gameState.remainingGuesses > 0 && !gameState.won) {
+        printf("\n");
+        for (int i = 0; i < 20; i++) {
+            printf("-");
+        }
+        printf("\n\n\n");
+        printf("Guessed letters: %s\n\n", gameState.guessedLetters);
+        printf("Number of guesses left: %d\n\n", gameState.remainingGuesses);
+        printf("Word: %s\n\n", gameState.currentGuess);
+        printf("Enter your guess -> ");
+        char choice;
+        int status = scanf("%c\n", &choice);
+        if (status == 0) {
+            // If the input was invalid, clear out the input buffer.
+            int c;
+            while((c = getchar()) != '\n' && c != EOF);
+        } else {
+            gameState = guessCharacter(gameState, choice);
+        }
+    }
+
+    drawScreen(gameState.won ? WIN_SCREEN : GAME_OVER_SCREEN);
 }
 
 void drawScreen(ScreenType screenType) {
@@ -140,6 +168,9 @@ void drawScreen(ScreenType screenType) {
         case GAME_OVER_SCREEN:
             _drawGameOverScreen();
             break;
+        case WIN_SCREEN:
+            _drawWinScreen();
+            break;
         case LEADERBOARD_SCREEN:
             _drawLeaderboardScreen();
             break;
@@ -152,4 +183,17 @@ void drawScreen(ScreenType screenType) {
 bool authenticateUser(char username[], char password[]) {
     // TODO
     return true;
+}
+
+ClientGameState startGame() {
+    ClientGameState gameState;
+    // TODO
+    gameState.remainingGuesses = 20;
+    return gameState;
+}
+
+ClientGameState guessCharacter(ClientGameState currentState, char character) {
+    // TODO
+    currentState.remainingGuesses --;
+    return currentState;
 }
