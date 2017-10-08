@@ -11,6 +11,7 @@ typedef struct str_pair {
 } StrPair;
 
 typedef struct client_game_state {
+    char username[16];
     int remainingGuesses;
     char * guessedLetters;
     char * currentGuess;

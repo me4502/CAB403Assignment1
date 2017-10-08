@@ -21,8 +21,8 @@ void drawScreen(ScreenType screenType);
 
 bool authenticateUser(char username[], char password[]);
 
-ClientGameState startGame();
+void startGame();
 
-ClientGameState guessCharacter(ClientGameState currentState, char character);
+void guessCharacter(char character);
 
 #endif //CAB403ASSIGNMENT1_CLIENT_H

@@ -6,9 +6,7 @@
 char * serverAddress;
 int serverPort;
 
-// Maximum length of 16 for usernames and passwords.
-// None are over this so therefore if more is entered it doesn't matter as it's wrong anyway.
-char username[16];
+ClientGameState gameState;
 
 int main(int argc, char ** argv) {
     switch(argc) {
@@ -56,13 +54,13 @@ void drawWelcomeText() {
 void _drawLoginScreen() {
     printf("\n\n\nYou are required to logon with your registered Username and Password\n\n");
     printf("Please enter your username -> ");
-    scanf("%s", username);
+    scanf("%s", gameState.username);
     printf("Please enter your password -> ");
     char password[16];
     scanf("%s", password);
     printf("\n");
 
-    if (authenticateUser(username, password)) {
+    if (authenticateUser(gameState.username, password)) {
         drawScreen(MENU_SCREEN);
     } else {
         printf("You entered either an incorrect username or password - disconnecting");
@@ -106,13 +104,13 @@ void _drawMenuScreen() {
 
 void _drawWinScreen() {
     printf("\nGame over\n\n\n");
-    printf("Well done %s! You won this round of Hangman!\n\n\n", username);
+    printf("Well done %s! You won this round of Hangman!\n\n\n", gameState.username);
     drawScreen(MENU_SCREEN);
 }
 
 void _drawGameOverScreen() {
     printf("\nGame over\n\n\n");
-    printf("Bad luck %s! You have ran out of guesses. The Hangman got you!\n\n\n", username);
+    printf("Bad luck %s! You have ran out of guesses. The Hangman got you!\n\n\n", gameState.username);
     drawScreen(MENU_SCREEN);
 }
 
@@ -132,7 +130,7 @@ void _drawLeaderboardScreen() {
 }
 
 void _drawGameScreen() {
-    ClientGameState gameState = startGame();
+    startGame();
     while (gameState.remainingGuesses > 0 && !gameState.won) {
         printf("\n");
         for (int i = 0; i < 20; i++) {
@@ -150,7 +148,7 @@ void _drawGameScreen() {
             int c;
             while((c = getchar()) != '\n' && c != EOF);
         } else {
-            gameState = guessCharacter(gameState, choice);
+            guessCharacter(choice);
         }
     }
 
@@ -185,15 +183,12 @@ bool authenticateUser(char username[], char password[]) {
     return true;
 }
 
-ClientGameState startGame() {
-    ClientGameState gameState;
+void startGame() {
     // TODO
     gameState.remainingGuesses = 20;
-    return gameState;
 }
 
-ClientGameState guessCharacter(ClientGameState currentState, char character) {
+void guessCharacter(char character) {
     // TODO
-    currentState.remainingGuesses --;
-    return currentState;
+    gameState.remainingGuesses --;
 }
