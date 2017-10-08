@@ -4,3 +4,6 @@
 
 ## CMake
 cmake-build-debug/
+
+## Stackdumps
+*.stackdump
