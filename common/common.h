@@ -3,10 +3,19 @@
 
 #define DEFAULT_PORT 12345
 
+#include <stdbool.h>
+
 typedef struct str_pair {
     char * a;
     char * b;
 } StrPair;
+
+typedef struct client_game_state {
+    int remainingGuesses;
+    char * guessedLetters;
+    char * currentGuess;
+    bool won;
+} ClientGameState;
 
 /**
  * Validates that the given port is valid.

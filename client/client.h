@@ -15,13 +15,6 @@ typedef enum screen_type {
     GAME_SCREEN
 } ScreenType;
 
-typedef struct client_game_state {
-    int remainingGuesses;
-    char * guessedLetters;
-    char * currentGuess;
-    bool won;
-} ClientGameState;
-
 void drawWelcomeText();
 
 void drawScreen(ScreenType screenType);
