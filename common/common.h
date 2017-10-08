@@ -2,6 +2,7 @@
 #define CAB403ASSIGNMENT1_COMMON_H
 
 #define DEFAULT_PORT 12345
+#define BACKLOG 10
 
 #include <stdbool.h>
 
