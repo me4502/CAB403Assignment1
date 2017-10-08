@@ -33,4 +33,9 @@ int validatePort(int port);
  */
 void copy_string(char * from, char * to);
 
+/**
+ * Prints msg then dies
+ */
+void error(char *msg);
+
 #endif //CAB403ASSIGNMENT1_COMMON_H

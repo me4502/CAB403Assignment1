@@ -7,6 +7,7 @@
 #include "../common/map.h"
 #include "../common/list.h"
 #include <unistd.h>
+#include <sys/socket.h>
 
 Map accounts;
 List words;
@@ -14,6 +15,10 @@ List words;
 int serverPort;
 
 int main(int argc, char ** argv) {
+    int sockfd, new_fd;
+    struct sockaddr_in my_addr;
+    signal(SIGINT, interruptHandler);
+
     switch(argc) {
         case 1:
             serverPort = DEFAULT_PORT;
@@ -22,28 +27,54 @@ int main(int argc, char ** argv) {
             serverPort = atoi(argv[1]);
             break;
         default:
-            printf("Too many arguments provided!\n");
-            return 1;
+            error("Too many arguments provided")
     }
 
     validatePort(serverPort);
 
     if (loadAccounts() != 0) {
-        return 1;
+        error("Couldnt load accounts");
     }
+
     if (loadWords() != 0) {
-        return 1;
+        error("Couldnt load words");
+    }
+
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        error("Socket could not be made");
     }
 
     printf("%d\n", serverPort);
 
-    signal(SIGINT, interruptHandler);
-    int i = 0;
-    while (true) {
-        i++;
-        printf("%d\n", i);
-        sleep(10);
+    my_addr.sin_family = AF_INET;
+    my_addr.sin_port = htons(atoi(argv[1]));
+    my_addr.sin_addr.s_addr = INADDR_ANY;    // 0.0.0.0
+
+    if (bind(sockfd, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) == -1) {
+        error("Couldnt bind")
     }
+
+    if (listen(sockfd, BACKLOG) == -1) {
+        error("Couldnt listen");
+    }
+
+    printf("Server is listening now :) \n")
+
+    while (1) {
+        sin_size = sizeof(struct sockaddr_in) {
+            if ((new_fd = accept(sockfd,
+                                (struct sockaddr *) &their_addr,
+                                 &sin_size)) == -1) {
+                                     perror("Accepting messed up");
+                                     continue;
+            }
+            printf("Got a connection from: %s\n", inet_ntoa(their_addr.sin_addr));
+            pthread_attr_t attr;
+            pthread_attr_init(&attr);
+            pthread_create(&client_thread, &attr, TODOXXX, new_fd);
+        }
+    }
+
     return 0;
 }
 
