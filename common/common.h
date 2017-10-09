@@ -26,21 +26,27 @@ typedef struct client_game_state {
 #define GUESS_PACKET 2
 
 // Server -> Client (128-256)
-# define SEND_STATE ((1 << 7 ) | 0)
+# define LOGIN_RESPONSE_PACKET ((1 << 7 ) | 0)
+# define STATE_RESPONSE_PACKET ((1 << 7 ) | 1)
 
 typedef struct data_packet {
     uint8_t type;
-    char username[16];
+    int session;
     void * payload;
 } DataPacket;
 
 typedef struct login_details_payload {
+    char username[16];
     char password[16];
 } LoginDetailsPayload;
 
 typedef struct take_turn_payload {
     char guess;
 } TakeTurnPayload;
+
+typedef struct login_response_payload {
+    bool success;
+} LoginResponsePayload;
 
 // Start Game Packet
 

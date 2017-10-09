@@ -16,6 +16,7 @@ struct sockaddr_in socketAddress;
 struct hostent * server;
 
 char username[16];
+int session = -1;
 
 ClientGameState gameState;
 
@@ -212,15 +213,24 @@ void drawScreen(ScreenType screenType) {
 
 bool authenticateUser(char username[], char password[]) {
     LoginDetailsPayload payload;
+    strcpy(payload.username, username);
     strcpy(payload.password, password);
 
     DataPacket dataPacket;
     dataPacket.type = LOGIN_PACKET;
-    strcpy(dataPacket.username, username);
     dataPacket.payload = malloc(sizeof(LoginDetailsPayload));
-    memcpy(dataPacket.payload, payload);
+    memcpy(dataPacket.payload, &payload, sizeof(LoginDetailsPayload));
 
     send(sockfd, &dataPacket, sizeof(dataPacket), 0);
+
+    DataPacket * inputPacket;
+    while ((recv(sockfd, &inputPacket, sizeof(DataPacket), 0)) > 0) {
+        if (inputPacket->type != LOGIN_RESPONSE_PACKET) {
+            perror("Received wrong packet. Login response packet expected");
+        }
+        session = inputPacket->session;
+        return ((LoginResponsePayload *) inputPacket->payload)->success;
+    }
 
     return true;
 }

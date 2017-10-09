@@ -1,6 +1,7 @@
 #include "map.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 Map createMap(int startingLength) {
     Map map = malloc(sizeof(struct map));
@@ -9,12 +10,16 @@ Map createMap(int startingLength) {
     return map;
 }
 
-void * getValue(Map map, void * key) {
+bool _areKeysEqual(char * a, char * b) {
+    return strcmp(a, b) == 0;
+}
+
+void * getValue(Map map, char * key) {
     for (int i = 0; i < map->length; i++) {
         if (map->entries[i] == NULL) {
             continue;
         }
-        if (map->entries[i]->key == key) {
+        if (_areKeysEqual(map->entries[i]->key, key)) {
             return map->entries[i]->value;
         }
     }
@@ -32,7 +37,7 @@ int _getFreeIndex(Map map) {
     return -1;
 }
 
-void putEntry(Map map, void * key, void * value) {
+void putEntry(Map map, char * key, void * value) {
     if (containsEntry(map, key)) {
         for (int i = 0; i < map->length; i++) {
             if (map->entries[i] == NULL) {
@@ -69,7 +74,7 @@ void putEntry(Map map, void * key, void * value) {
     }
 }
 
-bool removeEntry(Map map, void * key) {
+bool removeEntry(Map map, char * key) {
     for (int i = 0; i < map->length; i++) {
         if (map->entries[i] == NULL) {
             continue;
@@ -83,7 +88,7 @@ bool removeEntry(Map map, void * key) {
     return false;
 }
 
-bool containsEntry(Map map, void * key) {
+bool containsEntry(Map map, char * key) {
     return getValue(map, key) != NULL;
 }
 

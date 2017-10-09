@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 typedef struct map_entry {
-    void * key;
+    char * key;
     void * value;
 } * MapEntry;
 
@@ -27,7 +27,7 @@ Map createMap(int startingLength);
  * @param key The key
  * @return The value, or NULL
  */
-void * getValue(Map map, void * key);
+void * getValue(Map map, char * key);
 
 /**
  * Put an entry in the Map.
@@ -36,7 +36,7 @@ void * getValue(Map map, void * key);
  * @param key The key
  * @param value The value
  */
-void putEntry(Map map, void * key, void * value);
+void putEntry(Map map, char * key, void * value);
 
 /**
  * Removes an entry from the Map.
@@ -45,7 +45,7 @@ void putEntry(Map map, void * key, void * value);
  * @param key The key to remove
  * @return If an entry was removed
  */
-bool removeEntry(Map map, void * key);
+bool removeEntry(Map map, char * key);
 
 /**
  * Gets if a Map contains a key.
@@ -54,7 +54,7 @@ bool removeEntry(Map map, void * key);
  * @param key The key
  * @return If the map contains the key
  */
-bool containsEntry(Map map, void * key);
+bool containsEntry(Map map, char * key);
 
 /**
  * Frees the memory allocated to this map.

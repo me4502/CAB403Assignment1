@@ -81,18 +81,72 @@ int main(int argc, char **argv) {
 
 void * handleResponse(void * socket_id) {
     int sock = *(int *) socket_id;
-    ssize_t read_size;
-    char *message, buffer[BUFFER_SIZE]; // TODO
+    DataPacket * inputPacket = malloc(sizeof(DataPacket));
 
-    ClientGameState state;
+    while ((recv(sock, &inputPacket, sizeof(DataPacket), 0)) > 0) {
+        switch(inputPacket->type) { // TODO SIGSEGV :(
+            case LOGIN_PACKET: {
+                char username[16], password[16];
+                strcpy(username, ((LoginDetailsPayload *) inputPacket->payload)->username);
+                strcpy(password, ((LoginDetailsPayload *) inputPacket->payload)->password);
 
-    state.remainingGuesses = 1;
-    state.guessedLetters = "A";
-    state.currentGuess = "B";
-    state.won = false;
+                bool response = false;
+                if (containsEntry(accounts, username)) {
+                    if (strcmp(getValue(accounts, username), password) == 0) {
+                        response = true;
+                    }
+                }
 
-    while ((read_size = recv(sock, buffer, 2000, 0)) > 0) {
-        send(sock, &state, sizeof(state), 0);
+                LoginResponsePayload loginResponse;
+                loginResponse.success = response;
+
+                DataPacket packet;
+                packet.type = STATE_RESPONSE_PACKET;
+                packet.session = inputPacket->session; // TODO Generate session if valid.
+                packet.payload = malloc(sizeof(LoginDetailsPayload));
+                memcpy(packet.payload, &loginResponse, sizeof(LoginResponsePayload));
+
+                send(sock, &packet, sizeof(DataPacket), 0);
+                break;
+            }
+            case START_PACKET: {
+                ClientGameState state;
+
+                state.remainingGuesses = 1;
+                state.guessedLetters = "A";
+                state.currentGuess = "B";
+                state.won = false;
+
+                DataPacket packet;
+                packet.type = STATE_RESPONSE_PACKET;
+                packet.session = inputPacket->session;
+                packet.payload = malloc(sizeof(ClientGameState));
+                memcpy(packet.payload, &state, sizeof(ClientGameState));
+
+                send(sock, &packet, sizeof(DataPacket), 0);
+                break;
+            }
+            case GUESS_PACKET: {
+                ClientGameState state;
+
+                state.remainingGuesses = 1;
+                state.guessedLetters = "A";
+                state.currentGuess = "B";
+                state.won = false;
+
+                DataPacket packet;
+                packet.type = STATE_RESPONSE_PACKET;
+                packet.session = inputPacket->session;
+                packet.payload = malloc(sizeof(ClientGameState));
+                memcpy(packet.payload, &state, sizeof(ClientGameState));
+
+                send(sock, &packet, sizeof(DataPacket), 0);
+                break;
+            }
+            default:
+                perror("Unknown packet type");
+                break;
+        }
     }
 }
 
