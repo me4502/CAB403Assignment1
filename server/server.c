@@ -63,13 +63,11 @@ int main(int argc, char **argv) {
         error("Failed to listen on socket");
     }
 
-    printf("Server is listening on %s:%d \n", my_addr.sin_addr, serverPort);
+    printf("Server is listening on port %d \n", serverPort);
 
     while (1) {
         sin_size = sizeof(struct sockaddr_in);
-        if ((new_fd = accept(sockfd,
-                             (struct sockaddr *) &their_addr,
-                             &sin_size)) == -1) {
+        if ((new_fd = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size)) == -1) { // TODO Segfault here
             perror("Accepting messed up");
             continue;
         }
@@ -85,7 +83,7 @@ int main(int argc, char **argv) {
 void handleResponse(int socket_id) {
     int sock = *(int *) socket_id;
     ssize_t read_size;
-    char *message, buffer[256]; // TODO
+    char *message, buffer[BUFFER_SIZE]; // TODO
 
     ClientGameState state;
 

@@ -3,6 +3,7 @@
 
 #define DEFAULT_PORT 12345
 #define BACKLOG 10
+#define BUFFER_SIZE 256
 
 #include <stdbool.h>
 

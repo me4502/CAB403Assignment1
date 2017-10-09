@@ -2,9 +2,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <strings.h>
 
 char * serverAddress;
 int serverPort;
+
+int sockfd;
+struct sockaddr_in socketAddress;
+struct hostent * server;
 
 ClientGameState gameState;
 
@@ -32,6 +41,27 @@ int main(int argc, char ** argv) {
     if (serverAddress == NULL) {
         printf("Please provide a server address!\n");
         return 1;
+    }
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        error("Failed to create socket");
+    }
+
+    server = gethostbyname(argv[1]);
+    if (server == NULL) {
+        fprintf(stderr, "Unknown host\n");
+        exit(0);
+    }
+
+    bzero((char *) &socketAddress, sizeof(socketAddress));
+    socketAddress.sin_family = AF_INET;
+    bcopy(server->h_addr, (char *) &socketAddress.sin_addr.s_addr, server->h_length);
+    socketAddress.sin_port = htons(serverPort);
+
+    // Connect to the server, and fail with the appropriate error.
+    if (connect(sockfd, (const struct sockaddr *) &socketAddress, sizeof(socketAddress)) < 0) {
+        error("Failed to connect to server");
     }
 
     // Draw the initial welcome text
