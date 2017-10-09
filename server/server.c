@@ -93,13 +93,13 @@ void * handleResponse(void * socket_id) {
 
                 bool response = false;
                 if (containsEntry(accounts, username)) {
-                    printf("Has entry for %s", username);
+                    printf("Has entry for %s\n", username);
                     if (strcmp(getValue(accounts, username), password) == 0) {
-                        printf("Has right password of %s", password);
+                        printf("Has right password of %s\n", password);
                         response = true;
                     }
                 }
-                printf("%d oii", response);
+                printf("%d oii\n", response);
 
                 LoginResponsePayload loginResponse;
                 loginResponse.success = response;
@@ -156,7 +156,7 @@ int loadAccounts() {
 
     FILE *auth_file_handle = fopen("Authentication.txt", "r");
     if (auth_file_handle == NULL) {
-        printf("Failed to open Authentication.txt! Does it exist?");
+        printf("Failed to open Authentication.txt! Does it exist?\n");
         return 1;
     }
 
@@ -189,7 +189,7 @@ int loadAccounts() {
         }
 
         if (username == NULL || password == NULL) {
-            printf("Invalid username and password on line %d.", lineNum + 1);
+            printf("Invalid username and password on line %d.\n", lineNum + 1);
             fclose(auth_file_handle);
             return 1;
         }
@@ -206,7 +206,7 @@ int loadWords() {
 
     FILE *hangman_file_handle = fopen("hangman_text.txt", "r");
     if (hangman_file_handle == NULL) {
-        printf("Failed to open hangman_text.txt! Does it exist?");
+        printf("Failed to open hangman_text.txt! Does it exist?\n");
         return 1;
     }
 
@@ -236,7 +236,7 @@ int loadWords() {
                     copy_string(token, pair->b);
                     break;
                 default:
-                    printf("Malformed word pair on line: %d.", lineNum + 1);
+                    printf("Malformed word pair on line: %d.\n", lineNum + 1);
                     fclose(hangman_file_handle);
                     return 1;
             }
@@ -245,7 +245,7 @@ int loadWords() {
         }
 
         if (tokenNumber != 2) {
-            printf("Malformed word pair on line: %d.", lineNum + 1);
+            printf("Malformed word pair on line: %d.\n", lineNum + 1);
             fclose(hangman_file_handle);
             return 1;
         }
