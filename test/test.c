@@ -2,6 +2,7 @@
 #include "../common/map.h"
 
 #include <stdio.h>
+#include <memory.h>
 
 void testLists() {
     // Test Lists
@@ -26,6 +27,11 @@ void testMaps() {
 
     printf("key=%s\n", (char *) getValue(map, "key"));
     printf("abc=%s\n", (char *) getValue(map, "abc"));
+
+    char test[16];
+    strcpy(test, "abc");
+
+    printf("abc=%s\n", (char *) getValue(map, test));
 
     for (int i = 0; i < map->length; i++) {
         if (map->entries[i] == NULL) {
