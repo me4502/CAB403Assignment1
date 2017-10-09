@@ -2,7 +2,6 @@
 
 #define DEFAULT_PORT 12345
 #define BACKLOG 10
-#define BUFFER_SIZE 256
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -32,7 +31,6 @@ typedef struct client_game_state {
 typedef struct data_packet {
     uint8_t type;
     int session;
-    void * payload;
 } DataPacket;
 
 typedef struct login_details_payload {

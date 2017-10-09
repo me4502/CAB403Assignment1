@@ -218,18 +218,24 @@ bool authenticateUser(char username[], char password[]) {
 
     DataPacket dataPacket;
     dataPacket.type = LOGIN_PACKET;
-    dataPacket.payload = malloc(sizeof(LoginDetailsPayload));
-    memcpy(dataPacket.payload, &payload, sizeof(LoginDetailsPayload));
 
     send(sockfd, &dataPacket, sizeof(dataPacket), 0);
+    send(sockfd, &payload, sizeof(LoginDetailsPayload), 0);
 
-    DataPacket * inputPacket;
-    while ((recv(sockfd, &inputPacket, sizeof(DataPacket), 0)) > 0) {
+    DataPacket * inputPacket = malloc(sizeof(DataPacket));
+    while ((recv(sockfd, inputPacket, sizeof(DataPacket), 0)) > 0) {
         if (inputPacket->type != LOGIN_RESPONSE_PACKET) {
-            perror("Received wrong packet. Login response packet expected");
+            printf("Got packet %d.", inputPacket->type);
+            error("Received wrong packet. Login response packet expected");
         }
         session = inputPacket->session;
-        return ((LoginResponsePayload *) inputPacket->payload)->success;
+
+        LoginResponsePayload * responsePayload = malloc(sizeof(LoginResponsePayload));
+        recv(sockfd, responsePayload, sizeof(LoginResponsePayload), 0);
+        bool success = responsePayload->success;
+        free(responsePayload);
+
+        return success;
     }
 
     return true;

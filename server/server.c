@@ -23,7 +23,6 @@ int main(int argc, char **argv) {
     struct sockaddr_in their_addr;
     socklen_t sin_size;
     pthread_t client_thread;
-    pthread_attr_t attr;
     signal(SIGINT, interruptHandler);
 
     switch (argc) {
@@ -72,8 +71,7 @@ int main(int argc, char **argv) {
             continue;
         }
         printf("Got a connection from: %s\n", inet_ntoa(their_addr.sin_addr));
-        pthread_attr_init(&attr);
-        pthread_create(&client_thread, &attr, handleResponse, &new_fd);
+        pthread_create(&client_thread, NULL, handleResponse, &new_fd);
     }
 
     return 0;
@@ -83,30 +81,35 @@ void * handleResponse(void * socket_id) {
     int sock = *(int *) socket_id;
     DataPacket * inputPacket = malloc(sizeof(DataPacket));
 
-    while ((recv(sock, &inputPacket, sizeof(DataPacket), 0)) > 0) {
-        switch(inputPacket->type) { // TODO SIGSEGV :(
+    while ((recv(sock, inputPacket, sizeof(DataPacket), 0)) > 0) {
+        switch(inputPacket->type) {
             case LOGIN_PACKET: {
+                LoginDetailsPayload * detailsPayload = malloc(sizeof(LoginDetailsPayload));
+                recv(sock, detailsPayload, sizeof(LoginDetailsPayload), 0);
+
                 char username[16], password[16];
-                strcpy(username, ((LoginDetailsPayload *) inputPacket->payload)->username);
-                strcpy(password, ((LoginDetailsPayload *) inputPacket->payload)->password);
+                strcpy(username, detailsPayload->username);
+                strcpy(password, detailsPayload->password);
 
                 bool response = false;
                 if (containsEntry(accounts, username)) {
+                    printf("Has entry for %s", username);
                     if (strcmp(getValue(accounts, username), password) == 0) {
+                        printf("Has right password of %s", password);
                         response = true;
                     }
                 }
+                printf("%d oii", response);
 
                 LoginResponsePayload loginResponse;
                 loginResponse.success = response;
 
                 DataPacket packet;
-                packet.type = STATE_RESPONSE_PACKET;
+                packet.type = LOGIN_RESPONSE_PACKET;
                 packet.session = inputPacket->session; // TODO Generate session if valid.
-                packet.payload = malloc(sizeof(LoginDetailsPayload));
-                memcpy(packet.payload, &loginResponse, sizeof(LoginResponsePayload));
 
                 send(sock, &packet, sizeof(DataPacket), 0);
+                send(sock, &loginResponse, sizeof(LoginResponsePayload), 0);
                 break;
             }
             case START_PACKET: {
@@ -120,10 +123,9 @@ void * handleResponse(void * socket_id) {
                 DataPacket packet;
                 packet.type = STATE_RESPONSE_PACKET;
                 packet.session = inputPacket->session;
-                packet.payload = malloc(sizeof(ClientGameState));
-                memcpy(packet.payload, &state, sizeof(ClientGameState));
 
                 send(sock, &packet, sizeof(DataPacket), 0);
+                send(sock, &state, sizeof(ClientGameState), 0);
                 break;
             }
             case GUESS_PACKET: {
@@ -137,10 +139,9 @@ void * handleResponse(void * socket_id) {
                 DataPacket packet;
                 packet.type = STATE_RESPONSE_PACKET;
                 packet.session = inputPacket->session;
-                packet.payload = malloc(sizeof(ClientGameState));
-                memcpy(packet.payload, &state, sizeof(ClientGameState));
 
                 send(sock, &packet, sizeof(DataPacket), 0);
+                send(sock, &state, sizeof(ClientGameState), 0);
                 break;
             }
             default:
@@ -269,5 +270,6 @@ void interruptHandler(int signal) {
 
 void finishUp() {
     // TODO Handle required socket/thread closures.
-    return;
+    freeMap(accounts);
+    freeList(words);
 }
