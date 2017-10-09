@@ -67,27 +67,25 @@ int main(int argc, char **argv) {
 
     while (1) {
         sin_size = sizeof(struct sockaddr_in);
-        if ((new_fd = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size)) == -1) { // TODO Segfault here
-            perror("Accepting messed up");
+        if ((new_fd = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size)) == -1) {
+            perror("Failed to accept a connection");
             continue;
         }
         printf("Got a connection from: %s\n", inet_ntoa(their_addr.sin_addr));
-        pthread_attr_t attr;
         pthread_attr_init(&attr);
-        pthread_create(&client_thread, &attr, handleResponse, new_fd);
+        pthread_create(&client_thread, &attr, handleResponse, &new_fd);
     }
 
     return 0;
 }
 
-void handleResponse(int socket_id) {
+void * handleResponse(void * socket_id) {
     int sock = *(int *) socket_id;
     ssize_t read_size;
     char *message, buffer[BUFFER_SIZE]; // TODO
 
     ClientGameState state;
 
-    strcpy(state.username, "Mel");
     state.remainingGuesses = 1;
     state.guessedLetters = "A";
     state.currentGuess = "B";

@@ -30,6 +30,6 @@ int loadWords();
  */
 void finishUp();
 
-void handleResponse(int socket_id);
+void * handleResponse(void * socket_id);
 
 #endif //CAB403ASSIGNMENT1_SERVER_H

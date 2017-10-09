@@ -15,6 +15,8 @@ int sockfd;
 struct sockaddr_in socketAddress;
 struct hostent * server;
 
+char username[16];
+
 ClientGameState gameState;
 
 int main(int argc, char ** argv) {
@@ -84,13 +86,13 @@ void drawWelcomeText() {
 void _drawLoginScreen() {
     printf("\n\n\nYou are required to logon with your registered Username and Password\n\n");
     printf("Please enter your username -> ");
-    scanf("%s", gameState.username);
+    scanf("%s", username);
     printf("Please enter your password -> ");
     char password[16];
     scanf("%s", password);
     printf("\n");
 
-    if (authenticateUser(gameState.username, password)) {
+    if (authenticateUser(username, password)) {
         drawScreen(MENU_SCREEN);
     } else {
         printf("You entered either an incorrect username or password - disconnecting");
@@ -134,13 +136,13 @@ void _drawMenuScreen() {
 
 void _drawWinScreen() {
     printf("\nGame over\n\n\n");
-    printf("Well done %s! You won this round of Hangman!\n\n\n", gameState.username);
+    printf("Well done %s! You won this round of Hangman!\n\n\n", username);
     drawScreen(MENU_SCREEN);
 }
 
 void _drawGameOverScreen() {
     printf("\nGame over\n\n\n");
-    printf("Bad luck %s! You have ran out of guesses. The Hangman got you!\n\n\n", gameState.username);
+    printf("Bad luck %s! You have ran out of guesses. The Hangman got you!\n\n\n", username);
     drawScreen(MENU_SCREEN);
 }
 
@@ -209,7 +211,17 @@ void drawScreen(ScreenType screenType) {
 }
 
 bool authenticateUser(char username[], char password[]) {
-    // TODO
+    LoginDetailsPayload payload;
+    strcpy(payload.password, password);
+
+    DataPacket dataPacket;
+    dataPacket.type = LOGIN_PACKET;
+    strcpy(dataPacket.username, username);
+    dataPacket.payload = malloc(sizeof(LoginDetailsPayload));
+    memcpy(dataPacket.payload, payload);
+
+    send(sockfd, &dataPacket, sizeof(dataPacket), 0);
+
     return true;
 }
 
