@@ -16,9 +16,9 @@ Map accounts;
 List words;
 
 int serverPort;
+int sockfd, new_fd;
 
 int main(int argc, char **argv) {
-    int sockfd, new_fd;
     struct sockaddr_in my_addr;
     struct sockaddr_in their_addr;
     socklen_t sin_size;
@@ -272,4 +272,5 @@ void finishUp() {
     // TODO Handle required socket/thread closures.
     freeMap(accounts);
     freeList(words);
+    shutdown(sockfd, SHUT_RDWR);
 }
