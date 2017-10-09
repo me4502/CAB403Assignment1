@@ -1,6 +1,4 @@
-#ifndef CAB403ASSIGNMENT1_CLIENT_H
-#define CAB403ASSIGNMENT1_CLIENT_H
-#define CLIENT
+#pragma once
 
 #include "../common/common.h"
 
@@ -24,5 +22,3 @@ bool authenticateUser(char username[], char password[]);
 void startGame();
 
 void guessCharacter(char character);
-
-#endif //CAB403ASSIGNMENT1_CLIENT_H

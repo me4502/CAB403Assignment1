@@ -1,5 +1,4 @@
-#ifndef CAB403ASSIGNMENT1_COMMON_H
-#define CAB403ASSIGNMENT1_COMMON_H
+#pragma once
 
 #define DEFAULT_PORT 12345
 #define BACKLOG 10
@@ -65,5 +64,3 @@ void copy_string(char * from, char * to);
  * Prints msg then dies
  */
 void error(char *msg);
-
-#endif //CAB403ASSIGNMENT1_COMMON_H

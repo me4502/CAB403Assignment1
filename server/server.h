@@ -1,6 +1,4 @@
-#ifndef CAB403ASSIGNMENT1_SERVER_H
-#define CAB403ASSIGNMENT1_SERVER_H
-#define SERVER
+#pragma once
 
 #include "../common/common.h"
 
@@ -31,5 +29,3 @@ int loadWords();
 void finishUp();
 
 void * handleResponse(void * socket_id);
-
-#endif //CAB403ASSIGNMENT1_SERVER_H

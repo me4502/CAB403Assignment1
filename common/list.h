@@ -1,5 +1,5 @@
-#ifndef CAB403ASSIGNMENT1_LIST_H
-#define CAB403ASSIGNMENT1_LIST_H
+#pragma once
+
 #include <stdlib.h>
 
 typedef struct list {
@@ -50,5 +50,3 @@ void add(List list, void * value);
  * @param list The list
  */
 void freeList(List list);
-
-#endif //CAB403ASSIGNMENT1_LIST_H

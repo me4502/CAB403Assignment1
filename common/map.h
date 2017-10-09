@@ -1,5 +1,5 @@
-#ifndef CAB403ASSIGNMENT1_MAP_H
-#define CAB403ASSIGNMENT1_MAP_H
+#pragma once
+
 #include <stdbool.h>
 
 typedef struct map_entry {
@@ -62,5 +62,3 @@ bool containsEntry(Map map, void * key);
  * @param map The map
  */
 void freeMap(Map map);
-
-#endif //CAB403ASSIGNMENT1_MAP_H
