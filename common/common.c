@@ -1,6 +1,7 @@
 #include "common.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 int validatePort(int port) {
     if (port <= 0 || port >= 65535) {
