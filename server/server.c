@@ -15,10 +15,12 @@
 Map accounts;
 List words;
 
+List gameSessions;
+
 int serverPort;
 int sockfd, new_fd;
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv) {
     struct sockaddr_in my_addr;
     struct sockaddr_in their_addr;
     socklen_t sin_size;
@@ -62,6 +64,8 @@ int main(int argc, char **argv) {
         error("Failed to listen on socket");
     }
 
+    gameSessions = createList(8, sizeof(ServerGameState));
+
     printf("Server is listening on port %d \n", serverPort);
 
     while (1) {
@@ -82,7 +86,7 @@ void * handleResponse(void * socket_id) {
     DataPacket * inputPacket = malloc(sizeof(DataPacket));
 
     while ((recv(sock, inputPacket, sizeof(DataPacket), 0)) > 0) {
-        switch(inputPacket->type) {
+        switch (inputPacket->type) {
             case LOGIN_PACKET: {
                 LoginDetailsPayload * detailsPayload = malloc(sizeof(LoginDetailsPayload));
                 recv(sock, detailsPayload, sizeof(LoginDetailsPayload), 0);
@@ -113,6 +117,16 @@ void * handleResponse(void * socket_id) {
                 break;
             }
             case START_PACKET: {
+                StrPair * randomWordPair = (StrPair *) getValueAt(words, rand() % words->length);
+
+                ServerGameState serverState;
+                serverState.session = inputPacket->session;
+                serverState.wordPair = randomWordPair;
+                serverState.guessedLetters = "";
+                serverState.guessesLeft = (int) min(strlen(randomWordPair->a) + strlen(randomWordPair->b) + 10, 26);
+
+                add(gameSessions, &serverState);
+
                 ClientGameState state;
 
                 state.remainingGuesses = 1;
@@ -149,19 +163,21 @@ void * handleResponse(void * socket_id) {
                 break;
         }
     }
+
+    return NULL;
 }
 
 int loadAccounts() {
     accounts = createMap(16);
 
-    FILE *auth_file_handle = fopen("Authentication.txt", "r");
+    FILE * auth_file_handle = fopen("Authentication.txt", "r");
     if (auth_file_handle == NULL) {
         printf("Failed to open Authentication.txt! Does it exist?\n");
         return 1;
     }
 
     size_t len = 0;
-    char *line = NULL;
+    char * line = NULL;
     int lineNum = -1;
 
     while ((getline(&line, &len, auth_file_handle)) != -1) {
@@ -170,11 +186,11 @@ int loadAccounts() {
         if (lineNum == 0) {
             continue;
         }
-        char *token = strtok(line, "\t\n ");
+        char * token = strtok(line, "\t\n ");
         int tokenNumber = 0;
 
-        char *username = NULL;
-        char *password = NULL;
+        char * username = NULL;
+        char * password = NULL;
 
         while (token != NULL) {
             if (tokenNumber == 0) {
@@ -204,14 +220,14 @@ int loadAccounts() {
 int loadWords() {
     words = createList(16, sizeof(StrPair));
 
-    FILE *hangman_file_handle = fopen("hangman_text.txt", "r");
+    FILE * hangman_file_handle = fopen("hangman_text.txt", "r");
     if (hangman_file_handle == NULL) {
         printf("Failed to open hangman_text.txt! Does it exist?\n");
         return 1;
     }
 
     size_t len = 0;
-    char *line = malloc(16 * sizeof(char));
+    char * line = malloc(16 * sizeof(char));
     int lineNum = -1;
 
     while (getline(&line, &len, hangman_file_handle) != -1) {
@@ -220,10 +236,10 @@ int loadWords() {
         if (lineNum == 0) {
             continue;
         }
-        char *token = strtok(line, ",\n");
+        char * token = strtok(line, ",\n");
         int tokenNumber = 0;
 
-        StrPair *pair = malloc(sizeof(StrPair));
+        StrPair * pair = malloc(sizeof(StrPair));
 
         while (token != NULL) {
             switch (tokenNumber) {

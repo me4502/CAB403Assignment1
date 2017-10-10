@@ -2,6 +2,13 @@
 
 #include "../common/common.h"
 
+typedef struct server_game_state {
+    int session;
+    StrPair * wordPair;
+    int guessesLeft;
+    char * guessedLetters;
+} ServerGameState;
+
 /**
  * SIGINT Handler.
  *

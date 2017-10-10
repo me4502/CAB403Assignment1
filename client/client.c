@@ -21,7 +21,7 @@ int session = -1;
 ClientGameState gameState;
 
 int main(int argc, char ** argv) {
-    switch(argc) {
+    switch (argc) {
         case 1:
             printf("Too few arguments provided. Usage: %s <server IP> <server port>\n", argv[0]);
             return 1;
@@ -116,7 +116,7 @@ void _drawMenuScreen() {
         if (status == 0) {
             // If the input was invalid, clear out the input buffer.
             int c;
-            while((c = getchar()) != '\n' && c != EOF);
+            while ((c = getchar()) != '\n' && c != EOF);
         }
     }
 
@@ -179,7 +179,7 @@ void _drawGameScreen() {
         if (status == 0) {
             // If the input was invalid, clear out the input buffer.
             int c;
-            while((c = getchar()) != '\n' && c != EOF);
+            while ((c = getchar()) != '\n' && c != EOF);
         } else {
             guessCharacter(choice);
         }
@@ -189,7 +189,7 @@ void _drawGameScreen() {
 }
 
 void drawScreen(ScreenType screenType) {
-    switch(screenType) {
+    switch (screenType) {
         case LOGIN_SCREEN:
             _drawLoginScreen();
             break;
@@ -248,5 +248,5 @@ void startGame() {
 
 void guessCharacter(char character) {
     // TODO
-    gameState.remainingGuesses --;
+    gameState.remainingGuesses--;
 }

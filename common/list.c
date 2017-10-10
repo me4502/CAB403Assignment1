@@ -18,7 +18,7 @@ void * getValueAt(List list, int index) {
 }
 
 void add(List list, void * value) {
-    list->length ++;
+    list->length++;
     if (list->length > list->arrayLength) {
         size_t oldLength = list->arrayLength;
         list->arrayLength <<= 1;

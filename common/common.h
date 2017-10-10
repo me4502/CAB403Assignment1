@@ -2,6 +2,7 @@
 
 #define DEFAULT_PORT 12345
 #define BACKLOG 10
+#define min(a,b) ((a) > (b) ? (b) : (a))
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -67,4 +68,4 @@ void copy_string(char * from, char * to);
 /**
  * Prints msg then dies
  */
-void error(char *msg);
+void error(char * msg);

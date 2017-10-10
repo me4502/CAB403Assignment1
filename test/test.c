@@ -37,7 +37,7 @@ void testMaps() {
         if (map->entries[i] == NULL) {
             continue;
         }
-        printf("%s=%s\n", (char *) map->entries[i]->key, (char *) map->entries[i]->value);
+        printf("%s=%s\n", map->entries[i]->key, (char *) map->entries[i]->value);
     }
 
     freeMap(map);
