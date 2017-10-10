@@ -241,12 +241,42 @@ bool authenticateUser(char username[], char password[]) {
     return true;
 }
 
+void _receiveGameState() {
+    DataPacket * inputPacket = malloc(sizeof(DataPacket));
+    while ((recv(sockfd, inputPacket, sizeof(DataPacket), 0)) > 0) {
+        if (inputPacket->type != STATE_RESPONSE_PACKET) {
+            printf("Got packet %d.", inputPacket->type);
+            error("Received wrong packet. State response packet expected");
+        }
+        session = inputPacket->session;
+
+        ClientGameState * responsePayload = malloc(sizeof(ClientGameState));
+        recv(sockfd, responsePayload, sizeof(ClientGameState), 0);
+        memcpy(gameState, responsePayload);
+        free(responsePayload);
+
+        return;
+    }
+}
+
 void startGame() {
-    // TODO
-    gameState.remainingGuesses = 20;
+    DataPacket packet;
+    packet.type = START_PACKET;
+
+    send(sockfd, &packet, sizeof(packet), 0);
+
+    _receiveGameState();
 }
 
 void guessCharacter(char character) {
-    // TODO
-    gameState.remainingGuesses--;
+    TakeTurnPayload takeTurnPayload;
+    takeTurnPayload.guess = character;
+
+    DataPacket packet;
+    packet.type = GUESS_PACKET;
+
+    send(sockfd, &packet, sizeof(packet), 0);
+    send(sockfd, &takeTurnPayload, sizeof(TakeTurnPayload), 0);
+
+    _receiveGameState();
 }
