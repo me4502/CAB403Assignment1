@@ -14,8 +14,8 @@ typedef struct str_pair {
 
 typedef struct client_game_state {
     int remainingGuesses;
-    char * guessedLetters;
-    char * currentGuess;
+    char guessedLetters[26];
+    char currentGuess[32];
     bool won;
 } ClientGameState;
 

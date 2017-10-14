@@ -140,7 +140,7 @@ void * handleResponse(void * socket_id) {
                 ServerGameState serverState;
                 serverState.session = inputPacket->session;
                 serverState.wordPair = randomWordPair;
-                serverState.guessedLetters = "";
+                strcpy(serverState.guessedLetters, "");
                 serverState.guessesLeft = (int) min(strlen(randomWordPair->a) + strlen(randomWordPair->b) + 10, 26);
 
                 add(gameSessions, &serverState);
@@ -148,8 +148,8 @@ void * handleResponse(void * socket_id) {
                 ClientGameState state;
 
                 state.remainingGuesses = serverState.guessesLeft;
-                state.guessedLetters = serverState.guessedLetters;
-                state.currentGuess = "";
+                strcpy(state.guessedLetters, serverState.guessedLetters);
+                strcpy(state.currentGuess, "");
                 state.won = false;
 
                 DataPacket packet;
@@ -170,12 +170,12 @@ void * handleResponse(void * socket_id) {
                     return NULL;
                 }
                 serverState->guessesLeft --;
-                serverState->guessedLetters = ""; // TODO add the new char
+                strcpy(serverState->guessedLetters, ""); // TODO add the new char
 
                 ClientGameState state;
 
                 state.remainingGuesses = serverState->guessesLeft;
-                state.guessedLetters = serverState->guessedLetters;
+                strcpy(state.guessedLetters, serverState->guessedLetters);
                 state.currentGuess[0] = takeTurnPayload->guess; // TODO
                 state.won = false;
 

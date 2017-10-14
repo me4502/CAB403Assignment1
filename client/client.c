@@ -258,6 +258,7 @@ void _receiveGameState() {
 
     ClientGameState * responsePayload = malloc(sizeof(ClientGameState));
     recv(sockfd, responsePayload, sizeof(ClientGameState), 0);
+    gameState = malloc(sizeof(ClientGameState));
     memcpy(gameState, responsePayload, sizeof(ClientGameState));
     free(responsePayload);
 }
