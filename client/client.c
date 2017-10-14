@@ -75,6 +75,7 @@ int main(int argc, char ** argv) {
 
     DataPacket packet;
     packet.type = CLOSE_CLIENT_PACKET;
+    packet.session = session;
 
     send(sockfd, &packet, sizeof(packet), 0);
 }
@@ -229,45 +230,42 @@ bool authenticateUser(char username[], char password[]) {
     send(sockfd, &payload, sizeof(LoginDetailsPayload), 0);
 
     DataPacket * inputPacket = malloc(sizeof(DataPacket));
-    while ((recv(sockfd, inputPacket, sizeof(DataPacket), 0)) > 0) {
-        if (inputPacket->type != LOGIN_RESPONSE_PACKET) {
-            printf("Got packet %d.", inputPacket->type);
-            error("Received wrong packet. Login response packet expected");
-        }
-        session = inputPacket->session;
+    recv(sockfd, inputPacket, sizeof(DataPacket), 0);
 
-        LoginResponsePayload * responsePayload = malloc(sizeof(LoginResponsePayload));
-        recv(sockfd, responsePayload, sizeof(LoginResponsePayload), 0);
-        bool success = responsePayload->success;
-        free(responsePayload);
-
-        return success;
+    if (inputPacket->type != LOGIN_RESPONSE_PACKET) {
+        printf("Got packet %d.", inputPacket->type);
+        error("Received wrong packet. Login response packet expected");
     }
+    session = inputPacket->session;
+    free(inputPacket);
 
-    return true;
+    LoginResponsePayload * responsePayload = malloc(sizeof(LoginResponsePayload));
+    recv(sockfd, responsePayload, sizeof(LoginResponsePayload), 0);
+    bool success = responsePayload->success;
+    free(responsePayload);
+
+    return success;
 }
 
 void _receiveGameState() {
     DataPacket * inputPacket = malloc(sizeof(DataPacket));
-    while ((recv(sockfd, inputPacket, sizeof(DataPacket), 0)) > 0) {
-        if (inputPacket->type != STATE_RESPONSE_PACKET) {
-            printf("Got packet %d.", inputPacket->type);
-            error("Received wrong packet. State response packet expected");
-        }
-        session = inputPacket->session;
+    recv(sockfd, inputPacket, sizeof(DataPacket), 0);
 
-        ClientGameState * responsePayload = malloc(sizeof(ClientGameState));
-        recv(sockfd, responsePayload, sizeof(ClientGameState), 0);
-        memcpy(gameState, responsePayload, sizeof(ClientGameState));
-        free(responsePayload);
-
-        return;
+    if (inputPacket->type != STATE_RESPONSE_PACKET) {
+        printf("Got packet %d.", inputPacket->type);
+        error("Received wrong packet. State response packet expected");
     }
+
+    ClientGameState * responsePayload = malloc(sizeof(ClientGameState));
+    recv(sockfd, responsePayload, sizeof(ClientGameState), 0);
+    memcpy(gameState, responsePayload, sizeof(ClientGameState));
+    free(responsePayload);
 }
 
 void startGame() {
     DataPacket packet;
     packet.type = START_PACKET;
+    packet.session = session;
 
     send(sockfd, &packet, sizeof(packet), 0);
 
@@ -280,6 +278,7 @@ void guessCharacter(char character) {
 
     DataPacket packet;
     packet.type = GUESS_PACKET;
+    packet.session = session;
 
     send(sockfd, &packet, sizeof(packet), 0);
     send(sockfd, &takeTurnPayload, sizeof(TakeTurnPayload), 0);
