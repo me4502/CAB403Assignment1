@@ -45,6 +45,14 @@ void add(List list, void * value);
 //void addAt(List list, void * value, int index);
 
 /**
+ * Removes a value from the list by the index.
+ *
+ * @param list The list
+ * @param index The index
+ */
+void removeAt(List list, int index);
+
+/**
  * Frees the list.
  *
  * @param list The list

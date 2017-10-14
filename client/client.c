@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -9,7 +10,7 @@
 #include <strings.h>
 
 char * serverAddress;
-int serverPort;
+uint16_t serverPort;
 
 int sockfd;
 struct sockaddr_in socketAddress;
@@ -18,7 +19,7 @@ struct hostent * server;
 char username[16];
 int session = -1;
 
-ClientGameState gameState;
+ClientGameState * gameState;
 
 int main(int argc, char ** argv) {
     switch (argc) {
@@ -59,7 +60,7 @@ int main(int argc, char ** argv) {
 
     bzero((char *) &socketAddress, sizeof(socketAddress));
     socketAddress.sin_family = AF_INET;
-    bcopy(server->h_addr, (char *) &socketAddress.sin_addr.s_addr, server->h_length);
+    bcopy(server->h_addr, (char *) &socketAddress.sin_addr.s_addr, (size_t) server->h_length);
     socketAddress.sin_port = htons(serverPort);
 
     // Connect to the server, and fail with the appropriate error.
@@ -71,6 +72,11 @@ int main(int argc, char ** argv) {
     drawWelcomeText();
 
     drawScreen(LOGIN_SCREEN);
+
+    DataPacket packet;
+    packet.type = CLOSE_CLIENT_PACKET;
+
+    send(sockfd, &packet, sizeof(packet), 0);
 }
 
 void drawWelcomeText() {
@@ -164,15 +170,15 @@ void _drawLeaderboardScreen() {
 
 void _drawGameScreen() {
     startGame();
-    while (gameState.remainingGuesses > 0 && !gameState.won) {
+    while (gameState->remainingGuesses > 0 && !gameState->won) {
         printf("\n");
         for (int i = 0; i < 20; i++) {
             printf("-");
         }
         printf("\n\n\n");
-        printf("Guessed letters: %s\n\n", gameState.guessedLetters);
-        printf("Number of guesses left: %d\n\n", gameState.remainingGuesses);
-        printf("Word: %s\n\n", gameState.currentGuess);
+        printf("Guessed letters: %s\n\n", gameState->guessedLetters);
+        printf("Number of guesses left: %d\n\n", gameState->remainingGuesses);
+        printf("Word: %s\n\n", gameState->currentGuess);
         printf("Enter your guess -> ");
         char choice;
         int status = scanf("%c\n", &choice);
@@ -185,7 +191,7 @@ void _drawGameScreen() {
         }
     }
 
-    drawScreen(gameState.won ? WIN_SCREEN : GAME_OVER_SCREEN);
+    drawScreen(gameState->won ? WIN_SCREEN : GAME_OVER_SCREEN);
 }
 
 void drawScreen(ScreenType screenType) {
@@ -252,7 +258,7 @@ void _receiveGameState() {
 
         ClientGameState * responsePayload = malloc(sizeof(ClientGameState));
         recv(sockfd, responsePayload, sizeof(ClientGameState), 0);
-        memcpy(gameState, responsePayload);
+        memcpy(gameState, responsePayload, sizeof(ClientGameState));
         free(responsePayload);
 
         return;

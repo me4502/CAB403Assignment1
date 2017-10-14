@@ -17,8 +17,10 @@ List words;
 
 List gameSessions;
 
-int serverPort;
+uint16_t serverPort;
 int sockfd, new_fd;
+
+volatile int highestSession = 0;
 
 int main(int argc, char ** argv) {
     struct sockaddr_in my_addr;
@@ -81,6 +83,23 @@ int main(int argc, char ** argv) {
     return 0;
 }
 
+int _getStateIndexBySession(int session) {
+    for (int i = 0; i < gameSessions->length; i++) {
+        ServerGameState * serverGameState = ((ServerGameState *) getValueAt(gameSessions, i));
+        if (serverGameState->session == session) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+ServerGameState * _getStateBySession(int session) {
+    int index = _getStateIndexBySession(session);
+
+    return index != -1 ? getValueAt(gameSessions, index) : NULL;
+}
+
 void * handleResponse(void * socket_id) {
     int sock = *(int *) socket_id;
     DataPacket * inputPacket = malloc(sizeof(DataPacket));
@@ -95,6 +114,8 @@ void * handleResponse(void * socket_id) {
                 strcpy(username, detailsPayload->username);
                 strcpy(password, detailsPayload->password);
 
+                free(detailsPayload);
+
                 bool response = false;
                 if (containsEntry(accounts, username)) {
                     if (strcmp(getValue(accounts, username), password) == 0) {
@@ -107,7 +128,7 @@ void * handleResponse(void * socket_id) {
 
                 DataPacket packet;
                 packet.type = LOGIN_RESPONSE_PACKET;
-                packet.session = inputPacket->session; // TODO Generate session if valid.
+                packet.session = response ? (highestSession ++) : -1;
 
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &loginResponse, sizeof(LoginResponsePayload), 0);
@@ -126,9 +147,9 @@ void * handleResponse(void * socket_id) {
 
                 ClientGameState state;
 
-                state.remainingGuesses = 1;
-                state.guessedLetters = "A";
-                state.currentGuess = "B";
+                state.remainingGuesses = serverState.guessesLeft;
+                state.guessedLetters = serverState.guessedLetters;
+                state.currentGuess = "";
                 state.won = false;
 
                 DataPacket packet;
@@ -140,11 +161,22 @@ void * handleResponse(void * socket_id) {
                 break;
             }
             case GUESS_PACKET: {
+                TakeTurnPayload * takeTurnPayload = malloc(sizeof(TakeTurnPayload));
+                recv(sock, takeTurnPayload, sizeof(TakeTurnPayload), 0);
+
+                ServerGameState * serverState = _getStateBySession(inputPacket->session);
+                if (serverState == NULL) {
+                    printf("Got invalid session %d", inputPacket->session);
+                    return NULL;
+                }
+                serverState->guessesLeft --;
+                serverState->guessedLetters = ""; // TODO add the new char
+
                 ClientGameState state;
 
-                state.remainingGuesses = 1;
-                state.guessedLetters = "A";
-                state.currentGuess = "B";
+                state.remainingGuesses = serverState->guessesLeft;
+                state.guessedLetters = serverState->guessedLetters;
+                state.currentGuess[0] = takeTurnPayload->guess; // TODO
                 state.won = false;
 
                 DataPacket packet;
@@ -154,6 +186,12 @@ void * handleResponse(void * socket_id) {
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &state, sizeof(ClientGameState), 0);
                 break;
+            }
+            case CLOSE_CLIENT_PACKET: {
+                if (inputPacket->session != -1) {
+                    // Clear out their old session.
+                    removeAt(gameSessions, _getStateIndexBySession(inputPacket->session));
+                }
             }
             default:
                 perror("Unknown packet type");

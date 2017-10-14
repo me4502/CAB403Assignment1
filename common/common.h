@@ -24,10 +24,12 @@ typedef struct client_game_state {
 #define LOGIN_PACKET 0
 #define START_PACKET 1
 #define GUESS_PACKET 2
+#define CLOSE_CLIENT_PACKET 3
 
 // Server -> Client (128-256)
-# define LOGIN_RESPONSE_PACKET ((1 << 7 ) | 0)
-# define STATE_RESPONSE_PACKET ((1 << 7 ) | 1)
+#define LOGIN_RESPONSE_PACKET ((1 << 7 ) | 0)
+#define STATE_RESPONSE_PACKET ((1 << 7 ) | 1)
+#define CLOSE_SERVER_PACKET ((1 << 7) | 2)
 
 typedef struct data_packet {
     uint8_t type;

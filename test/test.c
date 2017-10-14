@@ -16,6 +16,14 @@ void testLists() {
         printf("%s\n", (char *) getValueAt(list, i));
     }
 
+    printf("\n");
+
+    removeAt(list, 1);
+
+    for (int i = 0; i < list->length; i++) {
+        printf("%s\n", (char *) getValueAt(list, i));
+    }
+
     freeList(list);
 }
 
@@ -45,5 +53,6 @@ void testMaps() {
 
 int main() {
     testLists();
+    printf("\n");
     testMaps();
 }
