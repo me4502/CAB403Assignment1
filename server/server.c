@@ -97,13 +97,10 @@ void * handleResponse(void * socket_id) {
 
                 bool response = false;
                 if (containsEntry(accounts, username)) {
-                    printf("Has entry for %s\n", username);
                     if (strcmp(getValue(accounts, username), password) == 0) {
-                        printf("Has right password of %s\n", password);
                         response = true;
                     }
                 }
-                printf("%d oii\n", response);
 
                 LoginResponsePayload loginResponse;
                 loginResponse.success = response;
