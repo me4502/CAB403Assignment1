@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <ctype.h>
 
 Map accounts;
 List words;
@@ -28,6 +29,7 @@ int main(int argc, char ** argv) {
     socklen_t sin_size;
     pthread_t client_thread;
     signal(SIGINT, interruptHandler);
+    signal(SIGHUP, interruptHandler);
 
     switch (argc) {
         case 1:
@@ -104,17 +106,15 @@ void * handleResponse(void * socket_id) {
     int sock = *(int *) socket_id;
     DataPacket * inputPacket = malloc(sizeof(DataPacket));
 
-    while ((recv(sock, inputPacket, sizeof(DataPacket), 0)) > 0) {
+    while (recv(sock, inputPacket, sizeof(DataPacket), 0) > 0) {
         switch (inputPacket->type) {
             case LOGIN_PACKET: {
-                LoginDetailsPayload * detailsPayload = malloc(sizeof(LoginDetailsPayload));
+                LoginDetailsPayload *detailsPayload = malloc(sizeof(LoginDetailsPayload));
                 recv(sock, detailsPayload, sizeof(LoginDetailsPayload), 0);
 
                 char username[16], password[16];
                 strcpy(username, detailsPayload->username);
                 strcpy(password, detailsPayload->password);
-
-                free(detailsPayload);
 
                 bool response = false;
                 if (containsEntry(accounts, username)) {
@@ -128,14 +128,16 @@ void * handleResponse(void * socket_id) {
 
                 DataPacket packet;
                 packet.type = LOGIN_RESPONSE_PACKET;
-                packet.session = response ? (highestSession ++) : -1;
+                packet.session = response ? (highestSession++) : -1;
 
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &loginResponse, sizeof(LoginResponsePayload), 0);
+                free(detailsPayload);
+                free(inputPacket);
                 break;
             }
             case START_PACKET: {
-                StrPair * randomWordPair = (StrPair *) getValueAt(words, rand() % words->length);
+                StrPair *randomWordPair = (StrPair *) getValueAt(words, rand() % words->length);
 
                 ServerGameState serverState;
                 serverState.session = inputPacket->session;
@@ -158,19 +160,35 @@ void * handleResponse(void * socket_id) {
 
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &state, sizeof(ClientGameState), 0);
+
+                free(inputPacket);
                 break;
             }
             case GUESS_PACKET: {
-                TakeTurnPayload * takeTurnPayload = malloc(sizeof(TakeTurnPayload));
+                TakeTurnPayload *takeTurnPayload = malloc(sizeof(TakeTurnPayload));
                 recv(sock, takeTurnPayload, sizeof(TakeTurnPayload), 0);
 
-                ServerGameState * serverState = _getStateBySession(inputPacket->session);
+                ServerGameState *serverState = _getStateBySession(inputPacket->session);
                 if (serverState == NULL) {
                     printf("Got invalid session %d", inputPacket->session);
-                    return NULL;
+                    free(takeTurnPayload);
+                    free(inputPacket);
+                    break;
                 }
-                serverState->guessesLeft --;
-                strcpy(serverState->guessedLetters, ""); // TODO add the new char
+                if (takeTurnPayload->guess < 'a' || takeTurnPayload->guess > 'z') {
+                    DataPacket packet;
+                    packet.type = INVALID_GUESS_PACKET;
+                    packet.session = inputPacket->session;
+
+                    send(sock, &packet, sizeof(DataPacket), 0);
+                    free(inputPacket);
+                    free(takeTurnPayload);
+                    break;
+                }
+                serverState->guessesLeft--;
+                size_t currentGuessNumbers = strlen(serverState->guessedLetters);
+                serverState->guessedLetters[currentGuessNumbers] = takeTurnPayload->guess;
+                serverState->guessedLetters[currentGuessNumbers + 1] = '\0';
 
                 ClientGameState state;
 
@@ -183,17 +201,24 @@ void * handleResponse(void * socket_id) {
                 packet.type = STATE_RESPONSE_PACKET;
                 packet.session = inputPacket->session;
 
+
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &state, sizeof(ClientGameState), 0);
+
+                free(inputPacket);
+                free(takeTurnPayload);
                 break;
             }
             case CLOSE_CLIENT_PACKET: {
                 if (inputPacket->session != -1) {
                     // Clear out their old session.
                     removeAt(gameSessions, _getStateIndexBySession(inputPacket->session));
+                    free(inputPacket);
+                    return NULL;
                 }
             }
             default:
+                free(inputPacket);
                 perror("Unknown packet type");
                 break;
         }
@@ -311,9 +336,9 @@ int loadWords() {
 }
 
 void interruptHandler(int signal) {
-    if (signal == SIGINT) {
+    if (signal == SIGINT || signal == SIGHUP) {
         // I put the \n at the start so it reads nicer :)
-        printf("\nReceived SIGINT\nI should exit cleanly now.\n");
+        printf("\nReceived interrupt\nI should exit cleanly now.\n");
         finishUp();
         exit(0);
     }

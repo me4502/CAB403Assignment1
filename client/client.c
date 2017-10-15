@@ -252,9 +252,16 @@ void _receiveGameState() {
     recv(sockfd, inputPacket, sizeof(DataPacket), 0);
 
     if (inputPacket->type != STATE_RESPONSE_PACKET) {
-        printf("Got packet %d.", inputPacket->type);
-        error("Received wrong packet. State response packet expected");
+        if (inputPacket->type == INVALID_GUESS_PACKET) {
+            printf("\n\nInvalid guess. Guesses must be lowercase letters!\n\n");
+            free(inputPacket);
+            return;
+        } else {
+            printf("Got packet %d.", inputPacket->type);
+            error("Received wrong packet. State response packet expected");
+        }
     }
+    free(inputPacket);
 
     ClientGameState * responsePayload = malloc(sizeof(ClientGameState));
     recv(sockfd, responsePayload, sizeof(ClientGameState), 0);

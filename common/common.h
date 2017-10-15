@@ -30,6 +30,7 @@ typedef struct client_game_state {
 #define LOGIN_RESPONSE_PACKET ((1 << 7 ) | 0)
 #define STATE_RESPONSE_PACKET ((1 << 7 ) | 1)
 #define CLOSE_SERVER_PACKET ((1 << 7) | 2)
+#define INVALID_GUESS_PACKET ((1 << 7) | 3)
 
 typedef struct data_packet {
     uint8_t type;
