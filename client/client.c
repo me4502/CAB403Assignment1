@@ -19,7 +19,7 @@ struct hostent * server;
 char username[16];
 int session = -1;
 
-ClientGameState * gameState;
+ClientGameState * gameState = NULL;
 
 int main(int argc, char ** argv) {
     switch (argc) {
@@ -78,6 +78,10 @@ int main(int argc, char ** argv) {
     packet.session = session;
 
     send(sockfd, &packet, sizeof(packet), 0);
+
+    if (gameState != NULL) {
+        free(gameState);
+    }
 }
 
 void drawWelcomeText() {
@@ -153,8 +157,63 @@ void _drawGameOverScreen() {
     drawScreen(MENU_SCREEN);
 }
 
+int _displayLeaderboardSegment() {
+    DataPacket inputPacket;
+    recv(sockfd, &inputPacket, sizeof(DataPacket), 0);
+
+    if (inputPacket.type == END_LEADERBOARD_PACKET) {
+        return -1;
+    } else if (inputPacket.type == ENTRY_LEADERBOARD_PACKET) {
+        LeaderboardEntry entry;
+        recv(sockfd, &entry, sizeof(LeaderboardEntry), 0);
+
+        printf("\n");
+        for (int i = 0; i < 77; i++) {
+            printf("=");
+        }
+
+        printf("\n\nPlayer - %s", entry.username);
+        printf("\nNumber of games won - %d", entry.wins);
+        printf("\nNumber of games played - %d", entry.games);
+
+        for (int i = 0; i < 77; i++) {
+            printf("=");
+        }
+        printf("\n\n\n");
+    } else {
+        error("Received unexpected packet!");
+        return -1;
+    }
+
+    return 0;
+}
+
 void _drawLeaderboardScreen() {
-    if (true) { // TODO
+    DataPacket packet;
+    packet.type = LEADERBOARD_PACKET;
+    packet.session = session;
+
+    send(sockfd, &packet, sizeof(packet), 0);
+
+    int drawnEntries = 0;
+
+    DataPacket inputPacket;
+    recv(sockfd, &inputPacket, sizeof(DataPacket), 0);
+
+    if (inputPacket.type != START_LEADERBOARD_PACKET) {
+        error("Received unexpected packet!");
+        return;
+    }
+
+    while (true) {
+        if (_displayLeaderboardSegment() == -1) {
+            break;
+        } else {
+            drawnEntries ++;
+        }
+    }
+
+    if (drawnEntries == 0) {
         printf("\n");
         for (int i = 0; i < 77; i++) {
             printf("=");
@@ -228,45 +287,40 @@ bool authenticateUser(char username[], char password[]) {
     send(sockfd, &dataPacket, sizeof(dataPacket), 0);
     send(sockfd, &payload, sizeof(LoginDetailsPayload), 0);
 
-    DataPacket * inputPacket = malloc(sizeof(DataPacket));
-    recv(sockfd, inputPacket, sizeof(DataPacket), 0);
+    DataPacket inputPacket;
+    recv(sockfd, &inputPacket, sizeof(DataPacket), 0);
 
-    if (inputPacket->type != LOGIN_RESPONSE_PACKET) {
-        printf("Got packet %d.", inputPacket->type);
+    if (inputPacket.type != LOGIN_RESPONSE_PACKET) {
+        printf("Got packet %d.", inputPacket.type);
         error("Received wrong packet. Login response packet expected");
     }
-    session = inputPacket->session;
-    free(inputPacket);
+    session = inputPacket.session;
 
-    LoginResponsePayload * responsePayload = malloc(sizeof(LoginResponsePayload));
-    recv(sockfd, responsePayload, sizeof(LoginResponsePayload), 0);
-    bool success = responsePayload->success;
-    free(responsePayload);
+    LoginResponsePayload responsePayload;
+    recv(sockfd, &responsePayload, sizeof(LoginResponsePayload), 0);
+    bool success = responsePayload.success;
 
     return success;
 }
 
 void _receiveGameState() {
-    DataPacket * inputPacket = malloc(sizeof(DataPacket));
-    recv(sockfd, inputPacket, sizeof(DataPacket), 0);
+    DataPacket inputPacket;
+    recv(sockfd, &inputPacket, sizeof(DataPacket), 0);
 
-    if (inputPacket->type != STATE_RESPONSE_PACKET) {
-        if (inputPacket->type == INVALID_GUESS_PACKET) {
+    if (inputPacket.type != STATE_RESPONSE_PACKET) {
+        if (inputPacket.type == INVALID_GUESS_PACKET) {
             printf("\n\nYou can't guess that, please try again!\n\n");
-            free(inputPacket);
             return;
         } else {
-            printf("Got packet %d.", inputPacket->type);
+            printf("Got packet %d.", inputPacket.type);
             error("Received wrong packet. State response packet expected");
         }
     }
-    free(inputPacket);
 
-    ClientGameState * responsePayload = malloc(sizeof(ClientGameState));
-    recv(sockfd, responsePayload, sizeof(ClientGameState), 0);
-    gameState = malloc(sizeof(ClientGameState));
-    memcpy(gameState, responsePayload, sizeof(ClientGameState));
-    free(responsePayload);
+    if (gameState == NULL) {
+        gameState = malloc(sizeof(ClientGameState));
+    }
+    recv(sockfd, gameState, sizeof(ClientGameState), 0);
 }
 
 void startGame() {

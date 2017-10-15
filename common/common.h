@@ -21,18 +21,28 @@ typedef struct client_game_state {
     bool won;
 } ClientGameState;
 
+typedef struct leaderboard_entry {
+    char username[16];
+    int wins;
+    int games;
+} LeaderboardEntry;
+
 // Data packets
 // Client -> Server (0-127)
 #define LOGIN_PACKET 0
 #define START_PACKET 1
 #define GUESS_PACKET 2
 #define CLOSE_CLIENT_PACKET 3
+#define LEADERBOARD_PACKET 4
 
 // Server -> Client (128-256)
 #define LOGIN_RESPONSE_PACKET ((1 << 7 ) | 0)
 #define STATE_RESPONSE_PACKET ((1 << 7 ) | 1)
 #define CLOSE_SERVER_PACKET ((1 << 7) | 2)
 #define INVALID_GUESS_PACKET ((1 << 7) | 3)
+#define START_LEADERBOARD_PACKET ((1 << 7) | 4)
+#define ENTRY_LEADERBOARD_PACKET ((1 << 7) | 5)
+#define END_LEADERBOARD_PACKET ((1 << 7) | 6)
 
 typedef struct data_packet {
     uint8_t type;

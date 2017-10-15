@@ -236,12 +236,26 @@ void * handleResponse(void * socket_id) {
                 free(takeTurnPayload);
                 break;
             }
+            case LEADERBOARD_PACKET: {
+                DataPacket packet;
+                packet.type = START_LEADERBOARD_PACKET;
+                packet.session = inputPacket->session;
+
+                send(sock, &packet, sizeof(DataPacket), 0);
+
+                packet.type = END_LEADERBOARD_PACKET;
+                packet.session = inputPacket->session;
+
+                send(sock, &packet, sizeof(DataPacket), 0);
+                break;
+            }
             case CLOSE_CLIENT_PACKET: {
                 if (inputPacket->session != -1) {
                     // Clear out their old session.
                     removeAt(gameSessions, _getStateIndexBySession(inputPacket->session));
                     return NULL;
                 }
+                break;
             }
             default:
                 perror("Unknown packet type");
