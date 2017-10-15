@@ -2,6 +2,8 @@
 
 #define DEFAULT_PORT 12345
 #define BACKLOG 10
+#define GUESSED_LETTERS_LENGTH 26
+#define CURRENT_GUESS_LENGTH 32
 #define min(a,b) ((a) > (b) ? (b) : (a))
 
 #include <stdbool.h>
@@ -14,8 +16,8 @@ typedef struct str_pair {
 
 typedef struct client_game_state {
     int remainingGuesses;
-    char guessedLetters[26];
-    char currentGuess[32];
+    char guessedLetters[GUESSED_LETTERS_LENGTH];
+    char currentGuess[CURRENT_GUESS_LENGTH];
     bool won;
 } ClientGameState;
 
@@ -59,14 +61,6 @@ typedef struct login_response_payload {
  * @return Return code. 0 = success, 1 = failure
  */
 int validatePort(int port);
-
-/**
- * Copy a string from one char * to another.
- *
- * @param from The from string
- * @param to The to string
- */
-void copy_string(char * from, char * to);
 
 /**
  * Prints msg then dies

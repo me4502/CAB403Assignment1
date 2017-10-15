@@ -6,7 +6,7 @@ typedef struct server_game_state {
     int session;
     StrPair * wordPair;
     int guessesLeft;
-    char guessedLetters[26];
+    char guessedLetters[GUESSED_LETTERS_LENGTH];
 } ServerGameState;
 
 /**

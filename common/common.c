@@ -12,10 +12,6 @@ int validatePort(int port) {
     return 0;
 }
 
-void copy_string(char * from, char * to) {
-    while ((*to++ = *from++) != '\0');
-}
-
 void error(char * msg) {
     perror(msg);
     exit(1);

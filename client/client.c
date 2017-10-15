@@ -119,7 +119,7 @@ void _drawMenuScreen() {
         printf("<3> Quit\n\n");
         printf("Selection option 1-3 -> ");
 
-        status = scanf("%d", &choice);
+        status = scanf("%d\n", &choice);
         if (status == 0) {
             // If the input was invalid, clear out the input buffer.
             int c;
@@ -253,7 +253,7 @@ void _receiveGameState() {
 
     if (inputPacket->type != STATE_RESPONSE_PACKET) {
         if (inputPacket->type == INVALID_GUESS_PACKET) {
-            printf("\n\nInvalid guess. Guesses must be lowercase letters!\n\n");
+            printf("\n\nYou can't guess that, please try again!\n\n");
             free(inputPacket);
             return;
         } else {

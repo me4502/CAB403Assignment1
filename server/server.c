@@ -11,7 +11,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <ctype.h>
 
 Map accounts;
 List words;
@@ -88,6 +87,9 @@ int main(int argc, char ** argv) {
 int _getStateIndexBySession(int session) {
     for (int i = 0; i < gameSessions->length; i++) {
         ServerGameState * serverGameState = ((ServerGameState *) getValueAt(gameSessions, i));
+        if (serverGameState == NULL) {
+            error("Encountered null gamestate!");
+        }
         if (serverGameState->session == session) {
             return i;
         }
@@ -100,6 +102,33 @@ ServerGameState * _getStateBySession(int session) {
     int index = _getStateIndexBySession(session);
 
     return index != -1 ? getValueAt(gameSessions, index) : NULL;
+}
+
+void formatWords(StrPair * randomWordPair, char guesses[GUESSED_LETTERS_LENGTH],
+                 char formattedWords[CURRENT_GUESS_LENGTH], int * remainingSpots) {
+    (* remainingSpots) = 0;
+    int index = 0;
+    for (int i = 0; i < strlen(randomWordPair->a); i++) {
+        if (strchr(guesses, randomWordPair->a[i])) {
+            formattedWords[index ++] = randomWordPair->a[i];
+        } else {
+            formattedWords[index ++] = '_';
+            (* remainingSpots) ++;
+        }
+        formattedWords[index ++] = ' ';
+    }
+    formattedWords[index ++] = ' ';
+    formattedWords[index ++] = ' ';
+    for (int i = 0; i < strlen(randomWordPair->b); i++) {
+        if (strchr(guesses, randomWordPair->b[i])) {
+            formattedWords[index ++] = randomWordPair->b[i];
+        } else {
+            formattedWords[index ++] = '_';
+            (* remainingSpots) ++;
+        }
+        formattedWords[index ++] = ' ';
+    }
+    formattedWords[index] = '\0';
 }
 
 void * handleResponse(void * socket_id) {
@@ -116,7 +145,7 @@ void * handleResponse(void * socket_id) {
                 strcpy(username, detailsPayload->username);
                 strcpy(password, detailsPayload->password);
 
-                bool response = false;
+                bool response = true;
                 if (containsEntry(accounts, username)) {
                     if (strcmp(getValue(accounts, username), password) == 0) {
                         response = true;
@@ -133,7 +162,6 @@ void * handleResponse(void * socket_id) {
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &loginResponse, sizeof(LoginResponsePayload), 0);
                 free(detailsPayload);
-                free(inputPacket);
                 break;
             }
             case START_PACKET: {
@@ -151,7 +179,8 @@ void * handleResponse(void * socket_id) {
 
                 state.remainingGuesses = serverState.guessesLeft;
                 strcpy(state.guessedLetters, serverState.guessedLetters);
-                strcpy(state.currentGuess, "");
+                int remaining = 0;
+                formatWords(randomWordPair, state.guessedLetters, state.currentGuess, &remaining);
                 state.won = false;
 
                 DataPacket packet;
@@ -160,8 +189,6 @@ void * handleResponse(void * socket_id) {
 
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &state, sizeof(ClientGameState), 0);
-
-                free(inputPacket);
                 break;
             }
             case GUESS_PACKET: {
@@ -175,13 +202,13 @@ void * handleResponse(void * socket_id) {
                     free(inputPacket);
                     break;
                 }
-                if (takeTurnPayload->guess < 'a' || takeTurnPayload->guess > 'z') {
+                if (takeTurnPayload->guess < 'a' || takeTurnPayload->guess > 'z'
+                    || strchr(serverState->guessedLetters, takeTurnPayload->guess)) {
                     DataPacket packet;
                     packet.type = INVALID_GUESS_PACKET;
                     packet.session = inputPacket->session;
 
                     send(sock, &packet, sizeof(DataPacket), 0);
-                    free(inputPacket);
                     free(takeTurnPayload);
                     break;
                 }
@@ -194,8 +221,9 @@ void * handleResponse(void * socket_id) {
 
                 state.remainingGuesses = serverState->guessesLeft;
                 strcpy(state.guessedLetters, serverState->guessedLetters);
-                state.currentGuess[0] = takeTurnPayload->guess; // TODO
-                state.won = false;
+                int remaining;
+                formatWords(serverState->wordPair, state.guessedLetters, state.currentGuess, &remaining);
+                state.won = remaining == 0;
 
                 DataPacket packet;
                 packet.type = STATE_RESPONSE_PACKET;
@@ -205,7 +233,6 @@ void * handleResponse(void * socket_id) {
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &state, sizeof(ClientGameState), 0);
 
-                free(inputPacket);
                 free(takeTurnPayload);
                 break;
             }
@@ -213,12 +240,10 @@ void * handleResponse(void * socket_id) {
                 if (inputPacket->session != -1) {
                     // Clear out their old session.
                     removeAt(gameSessions, _getStateIndexBySession(inputPacket->session));
-                    free(inputPacket);
                     return NULL;
                 }
             }
             default:
-                free(inputPacket);
                 perror("Unknown packet type");
                 break;
         }
@@ -255,10 +280,10 @@ int loadAccounts() {
         while (token != NULL) {
             if (tokenNumber == 0) {
                 username = malloc(strlen(token) * sizeof(char));
-                copy_string(token, username);
+                strcpy(username, token);
             } else if (tokenNumber == 1) {
                 password = malloc(strlen(token) * sizeof(char));
-                copy_string(token, password);
+                strcpy(password, token);
             }
             token = strtok(NULL, "\t\n ");
             tokenNumber++;
@@ -305,11 +330,11 @@ int loadWords() {
             switch (tokenNumber) {
                 case 0:
                     pair->a = malloc(strlen(token) * sizeof(char));
-                    copy_string(token, pair->a);
+                    strcpy(pair->a, token);
                     break;
                 case 1:
                     pair->b = malloc(strlen(token) * sizeof(char));
-                    copy_string(token, pair->b);
+                    strcpy(pair->b, token);
                     break;
                 default:
                     printf("Malformed word pair on line: %d.\n", lineNum + 1);
