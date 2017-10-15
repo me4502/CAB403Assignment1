@@ -145,7 +145,7 @@ void * handleResponse(void * socket_id) {
                 strcpy(username, detailsPayload->username);
                 strcpy(password, detailsPayload->password);
 
-                bool response = true;
+                bool response = false;
                 if (containsEntry(accounts, username)) {
                     if (strcmp(getValue(accounts, username), password) == 0) {
                         response = true;
@@ -229,7 +229,6 @@ void * handleResponse(void * socket_id) {
                 packet.type = STATE_RESPONSE_PACKET;
                 packet.session = inputPacket->session;
 
-
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &state, sizeof(ClientGameState), 0);
 
@@ -271,7 +270,7 @@ int loadAccounts() {
         if (lineNum == 0) {
             continue;
         }
-        char * token = strtok(line, "\t\n ");
+        char * token = strtok(line, "\t\n\r ");
         int tokenNumber = 0;
 
         char * username = NULL;
@@ -285,7 +284,7 @@ int loadAccounts() {
                 password = malloc(strlen(token) * sizeof(char));
                 strcpy(password, token);
             }
-            token = strtok(NULL, "\t\n ");
+            token = strtok(NULL, "\t\n\r ");
             tokenNumber++;
         }
 
@@ -321,7 +320,7 @@ int loadWords() {
         if (lineNum == 0) {
             continue;
         }
-        char * token = strtok(line, ",\n");
+        char * token = strtok(line, ",\n\r");
         int tokenNumber = 0;
 
         StrPair * pair = malloc(sizeof(StrPair));
@@ -341,7 +340,7 @@ int loadWords() {
                     fclose(hangman_file_handle);
                     return 1;
             }
-            token = strtok(NULL, ",\n");
+            token = strtok(NULL, ",\n\r");
             tokenNumber++;
         }
 

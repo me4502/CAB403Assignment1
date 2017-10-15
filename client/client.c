@@ -119,12 +119,11 @@ void _drawMenuScreen() {
         printf("<3> Quit\n\n");
         printf("Selection option 1-3 -> ");
 
-        status = scanf("%d\n", &choice);
-        if (status == 0) {
-            // If the input was invalid, clear out the input buffer.
-            int c;
-            while ((c = getchar()) != '\n' && c != EOF);
-        }
+        status = scanf("%d", &choice);
+
+        // Clear out the input buffer.
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
     }
 
     switch (choice) {
@@ -182,7 +181,7 @@ void _drawGameScreen() {
         printf("Word: %s\n\n", gameState->currentGuess);
         printf("Enter your guess -> ");
         char choice;
-        int status = scanf("%c\n", &choice);
+        int status = scanf("%c", &choice);
         if (status == 0) {
             // If the input was invalid, clear out the input buffer.
             int c;
