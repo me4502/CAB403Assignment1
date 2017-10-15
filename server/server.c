@@ -89,6 +89,7 @@ int _getStateIndexBySession(int session) {
         ServerGameState * serverGameState = ((ServerGameState *) getValueAt(gameSessions, i));
         if (serverGameState == NULL) {
             error("Encountered null gamestate!");
+            return -1;
         }
         if (serverGameState->session == session) {
             return i;
@@ -165,7 +166,7 @@ void * handleResponse(void * socket_id) {
                 break;
             }
             case START_PACKET: {
-                StrPair *randomWordPair = (StrPair *) getValueAt(words, rand() % words->length);
+                StrPair *randomWordPair = (StrPair *) getValueAt(words, (int) (random() % words->length));
 
                 ServerGameState serverState;
                 serverState.session = inputPacket->session;
@@ -328,12 +329,12 @@ int loadWords() {
         while (token != NULL) {
             switch (tokenNumber) {
                 case 0:
-                    pair->a = malloc(strlen(token) * sizeof(char));
-                    strcpy(pair->a, token);
-                    break;
-                case 1:
                     pair->b = malloc(strlen(token) * sizeof(char));
                     strcpy(pair->b, token);
+                    break;
+                case 1:
+                    pair->a = malloc(strlen(token) * sizeof(char));
+                    strcpy(pair->a, token);
                     break;
                 default:
                     printf("Malformed word pair on line: %d.\n", lineNum + 1);
