@@ -16,7 +16,7 @@ int sockfd;
 struct sockaddr_in socketAddress;
 struct hostent * server;
 
-char username[16];
+char username[USERNAME_MAX_LENGTH];
 int session = -1;
 
 ClientGameState * gameState = NULL;
@@ -100,7 +100,7 @@ void _drawLoginScreen() {
     printf("Please enter your username -> ");
     scanf("%s", username);
     printf("Please enter your password -> ");
-    char password[16];
+    char password[PASSWORD_MAX_LENGTH];
     scanf("%s", password);
     printf("\n");
 

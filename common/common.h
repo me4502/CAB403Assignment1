@@ -2,8 +2,13 @@
 
 #define DEFAULT_PORT 12345
 #define BACKLOG 10
+
+// Length definitions
+#define USERNAME_MAX_LENGTH 16
+#define PASSWORD_MAX_LENGTH 16
 #define GUESSED_LETTERS_LENGTH 26
 #define CURRENT_GUESS_LENGTH 32
+
 #define min(a,b) ((a) > (b) ? (b) : (a))
 
 #include <stdbool.h>
@@ -22,7 +27,7 @@ typedef struct client_game_state {
 } ClientGameState;
 
 typedef struct leaderboard_entry {
-    char username[16];
+    char username[USERNAME_MAX_LENGTH];
     int wins;
     int games;
 } LeaderboardEntry;
@@ -50,8 +55,8 @@ typedef struct data_packet {
 } DataPacket;
 
 typedef struct login_details_payload {
-    char username[16];
-    char password[16];
+    char username[USERNAME_MAX_LENGTH];
+    char password[PASSWORD_MAX_LENGTH];
 } LoginDetailsPayload;
 
 typedef struct take_turn_payload {

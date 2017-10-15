@@ -15,6 +15,8 @@
 Map accounts;
 List words;
 
+List scores;
+
 List gameSessions;
 
 uint16_t serverPort;
@@ -67,7 +69,8 @@ int main(int argc, char ** argv) {
         error("Failed to listen on socket");
     }
 
-    gameSessions = createList(8, sizeof(ServerGameState));
+    gameSessions = createList(4, sizeof(ServerGameState));
+    scores = createList(4, sizeof(LeaderboardEntry));
 
     printf("Server is listening on port %d \n", serverPort);
 
@@ -142,7 +145,7 @@ void * handleResponse(void * socket_id) {
                 LoginDetailsPayload detailsPayload;
                 recv(sock, &detailsPayload, sizeof(LoginDetailsPayload), 0);
 
-                char username[16], password[16];
+                char username[USERNAME_MAX_LENGTH], password[PASSWORD_MAX_LENGTH];
                 strcpy(username, detailsPayload.username);
                 strcpy(password, detailsPayload.password);
 
@@ -320,7 +323,7 @@ int loadWords() {
     }
 
     size_t len = 0;
-    char * line = malloc(16 * sizeof(char));
+    char * line = NULL;
     int lineNum = -1;
 
     while (getline(&line, &len, hangman_file_handle) != -1) {
@@ -363,7 +366,6 @@ int loadWords() {
     }
 
     fclose(hangman_file_handle);
-    free(line);
 
     return 0;
 }
@@ -381,5 +383,7 @@ void finishUp() {
     // TODO Handle required socket/thread closures.
     freeMap(accounts);
     freeList(words);
+    freeList(gameSessions);
+    freeList(scores);
     shutdown(sockfd, SHUT_RDWR);
 }
