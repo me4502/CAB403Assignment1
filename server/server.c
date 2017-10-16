@@ -15,8 +15,9 @@
 Map accounts;
 List words;
 
-List scores;
+Map scores;
 
+List currentSessions;
 List gameSessions;
 
 uint16_t serverPort;
@@ -69,8 +70,9 @@ int main(int argc, char ** argv) {
         error("Failed to listen on socket");
     }
 
+    currentSessions = createList(4, sizeof(SessionStore));
     gameSessions = createList(4, sizeof(ServerGameState));
-    scores = createList(4, sizeof(LeaderboardEntry));
+    scores = createMap(4);
 
     printf("Server is listening on port %d \n", serverPort);
 
@@ -140,6 +142,17 @@ void * handleResponse(void * socket_id) {
     DataPacket inputPacket;
 
     while (recv(sock, &inputPacket, sizeof(DataPacket), 0) > 0) {
+        SessionStore * currentSession = NULL;
+        if (inputPacket.session != -1) {
+            for (int i = 0; i < currentSessions->length; i++) {
+                SessionStore * sessionStore = getValueAt(currentSessions, i);
+                if (sessionStore->session == inputPacket.session) {
+                    currentSession = sessionStore;
+                    break;
+                }
+            }
+        }
+
         switch (inputPacket.type) {
             case LOGIN_PACKET: {
                 LoginDetailsPayload detailsPayload;
@@ -163,11 +176,22 @@ void * handleResponse(void * socket_id) {
                 packet.type = LOGIN_RESPONSE_PACKET;
                 packet.session = response ? (highestSession++) : -1;
 
+                if (response) {
+                    SessionStore * store = malloc(sizeof(SessionStore));
+                    strcpy(store->username, username);
+                    store->session = packet.session;
+                    add(currentSessions, store);
+                }
+
                 send(sock, &packet, sizeof(DataPacket), 0);
                 send(sock, &loginResponse, sizeof(LoginResponsePayload), 0);
                 break;
             }
             case START_PACKET: {
+                if (currentSession == NULL) {
+                    printf("Non-logged in user tried to start a game!");
+                    break;
+                }
                 StrPair *randomWordPair = (StrPair *) getValueAt(words, (int) (random() % words->length));
 
                 ServerGameState serverState;
@@ -195,6 +219,10 @@ void * handleResponse(void * socket_id) {
                 break;
             }
             case GUESS_PACKET: {
+                if (currentSession == NULL) {
+                    printf("Non-logged in user tried to guess!");
+                    break;
+                }
                 TakeTurnPayload takeTurnPayload;
                 recv(sock, &takeTurnPayload, sizeof(TakeTurnPayload), 0);
 
@@ -204,7 +232,8 @@ void * handleResponse(void * socket_id) {
                     break;
                 }
                 if (takeTurnPayload.guess < 'a' || takeTurnPayload.guess > 'z'
-                    || strchr(serverState->guessedLetters, takeTurnPayload.guess)) {
+                    || strchr(serverState->guessedLetters, takeTurnPayload.guess)
+                    || serverState->guessesLeft <= 0) {
                     DataPacket packet;
                     packet.type = INVALID_GUESS_PACKET;
                     packet.session = inputPacket.session;
@@ -225,6 +254,12 @@ void * handleResponse(void * socket_id) {
                 formatWords(serverState->wordPair, state.guessedLetters, state.currentGuess, &remaining);
                 state.won = remaining == 0;
 
+                LeaderboardEntry * entry = getScoreForPlayer(currentSession->username);
+                entry->games ++;
+                if (state.won) {
+                    entry->wins ++;
+                }
+
                 DataPacket packet;
                 packet.type = STATE_RESPONSE_PACKET;
                 packet.session = inputPacket.session;
@@ -234,11 +269,28 @@ void * handleResponse(void * socket_id) {
                 break;
             }
             case LEADERBOARD_PACKET: {
+                if (currentSession == NULL) {
+                    printf("Non-logged in user tried to request leaderboard!");
+                    break;
+                }
                 DataPacket packet;
                 packet.type = START_LEADERBOARD_PACKET;
                 packet.session = inputPacket.session;
 
                 send(sock, &packet, sizeof(DataPacket), 0);
+
+                int length;
+                LeaderboardEntry ** leaderboardArray = (LeaderboardEntry **) getValues(scores, sizeof(LeaderboardEntry), &length);
+                // TODO Sort
+                for (int i = 0; i < length; i++) {
+                    LeaderboardEntry * leaderboardEntry = leaderboardArray[i];
+
+                    packet.type = ENTRY_LEADERBOARD_PACKET;
+                    packet.session = inputPacket.session;
+
+                    send(sock, &packet, sizeof(DataPacket), 0);
+                    send(sock, leaderboardEntry, sizeof(LeaderboardEntry), 0);
+                }
 
                 packet.type = END_LEADERBOARD_PACKET;
                 packet.session = inputPacket.session;
@@ -250,6 +302,13 @@ void * handleResponse(void * socket_id) {
                 if (inputPacket.session != -1) {
                     // Clear out their old session.
                     removeAt(gameSessions, _getStateIndexBySession(inputPacket.session));
+                    for (int i = 0; i < currentSessions->length; i++) {
+                        SessionStore * sessionStore = getValueAt(currentSessions, i);
+                        if (sessionStore->session == inputPacket.session) {
+                            removeAt(currentSessions, i);
+                            break;
+                        }
+                    }
                     return NULL;
                 }
                 break;
@@ -261,6 +320,16 @@ void * handleResponse(void * socket_id) {
     }
 
     return NULL;
+}
+
+LeaderboardEntry * getScoreForPlayer(char username[USERNAME_MAX_LENGTH]) {
+    LeaderboardEntry * entry = getValue(scores, username);
+    if (entry == NULL) {
+        entry = malloc(sizeof(LeaderboardEntry));
+        putEntry(scores, username, entry);
+    }
+
+    return entry;
 }
 
 int loadAccounts() {
@@ -384,6 +453,7 @@ void finishUp() {
     freeMap(accounts);
     freeList(words);
     freeList(gameSessions);
-    freeList(scores);
+    freeList(currentSessions);
+    freeMap(scores);
     shutdown(sockfd, SHUT_RDWR);
 }

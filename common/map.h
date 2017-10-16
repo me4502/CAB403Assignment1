@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "list.h"
 
 typedef struct map_entry {
     char * key;
@@ -55,6 +56,16 @@ bool removeEntry(Map map, char * key);
  * @return If the map contains the key
  */
 bool containsEntry(Map map, char * key);
+
+/**
+ * Gets the map values as an array.
+ *
+ * @param map The map
+ * @param size The size of the data type
+ * @param length The return length of the array
+ * @return The map values array
+ */
+void ** getValues(Map map, size_t size, int * length);
 
 /**
  * Frees the memory allocated to this map.

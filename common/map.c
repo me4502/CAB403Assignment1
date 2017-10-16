@@ -92,6 +92,19 @@ bool containsEntry(Map map, char * key) {
     return getValue(map, key) != NULL;
 }
 
+void ** getValues(Map map, size_t size, int * length) {
+    void ** values = malloc(map->length * size);
+    int index = 0;
+    for (int i = 0; i < map->length; i++) {
+        if (map->entries[i] == NULL) {
+            continue;
+        }
+        values[index ++] = map->entries[i]->value;
+    }
+
+    return values;
+}
+
 void freeMap(Map map) {
     free(map->entries);
     free(map);
