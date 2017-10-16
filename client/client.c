@@ -174,7 +174,7 @@ int _displayLeaderboardSegment() {
 
         printf("\n\nPlayer - %s", entry.username);
         printf("\nNumber of games won - %d", entry.wins);
-        printf("\nNumber of games played - %d", entry.games);
+        printf("\nNumber of games played - %d\n\n", entry.games);
 
         for (int i = 0; i < 77; i++) {
             printf("=");

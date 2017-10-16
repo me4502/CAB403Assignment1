@@ -254,10 +254,13 @@ void * handleResponse(void * socket_id) {
                 formatWords(serverState->wordPair, state.guessedLetters, state.currentGuess, &remaining);
                 state.won = remaining == 0;
 
-                LeaderboardEntry * entry = getScoreForPlayer(currentSession->username);
-                entry->games ++;
-                if (state.won) {
-                    entry->wins ++;
+                if (state.won || serverState->guessesLeft <= 0) {
+                    LeaderboardEntry * entry = getScoreForPlayer(currentSession->username);
+                    entry->games++;
+                    strcpy(entry->username, currentSession->username);
+                    if (state.won) {
+                        entry->wins++;
+                    }
                 }
 
                 DataPacket packet;
@@ -326,6 +329,8 @@ LeaderboardEntry * getScoreForPlayer(char username[USERNAME_MAX_LENGTH]) {
     LeaderboardEntry * entry = getValue(scores, username);
     if (entry == NULL) {
         entry = malloc(sizeof(LeaderboardEntry));
+        entry->games = 0;
+        entry->wins = 0;
         putEntry(scores, username, entry);
     }
 

@@ -101,6 +101,7 @@ void ** getValues(Map map, size_t size, int * length) {
         }
         values[index ++] = map->entries[i]->value;
     }
+    (* length) = index;
 
     return values;
 }
