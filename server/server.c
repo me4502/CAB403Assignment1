@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "server.h"
 
 #include <stdio.h>
@@ -19,6 +20,120 @@ Map scores;
 
 List currentSessions;
 List gameSessions;
+
+
+/* global mutex for our program. assignment initializes it. */
+/* note that we use a RECURSIVE mutex, since a handler      */
+/* thread might try to lock it twice consecutively.         */
+pthread_mutex_t request_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+
+/* global condition variable for our program. assignment initializes it. */
+pthread_cond_t  got_request   = PTHREAD_COND_INITIALIZER;
+int num_requests = 0; // Pending requests
+struct request* requests = NULL;     /* head of linked list of requests. */
+struct request* last_request = NULL; /* pointer to last request.         */
+
+/*
+ * function add_request(): add a request to the requests list
+ * algorithm: creates a request structure, adds to the list, and
+ *            increases number of pending requests by one.
+ * input:     request number, linked list mutex.
+ * output:    none.
+ */
+void add_request(int socket_id, pthread_mutex_t* p_mutex, pthread_cond_t*  p_cond_var) {
+    int rc;                         /* return code of pthreads functions.  */
+    struct request* a_request;      /* pointer to newly added request.     */
+
+    /* create structure with new request */
+    a_request = (struct request*)malloc(sizeof(struct request));
+    if (!a_request) { /* malloc failed?? */
+        fprintf(stderr, "add_request: out of memory\n");
+        exit(1);
+    }
+    a_request->socket_id = socket_id;
+    a_request->next = NULL;
+
+    /* lock the mutex, to assure exclusive access to the list */
+    rc = pthread_mutex_lock(p_mutex);
+
+    /* add new request to the end of the list, updating list */
+    /* pointers as required */
+    if (num_requests == 0) { /* special case - list is empty */
+        requests = a_request;
+        last_request = a_request;
+    }
+    else {
+        last_request->next = a_request;
+        last_request = a_request;
+    }
+
+    /* increase total number of pending requests by one. */
+    num_requests++;
+
+    /* unlock mutex */
+    rc = pthread_mutex_unlock(p_mutex);
+
+    /* signal the condition variable - there's a new request to handle */
+    rc = pthread_cond_signal(p_cond_var);
+}
+
+/*
+ * function get_request(): gets the first pending request from the requests list
+ *                         removing it from the list.
+ * algorithm: creates a request structure, adds to the list, and
+ *            increases number of pending requests by one.
+ * input:     request number, linked list mutex.
+ * output:    pointer to the removed request, or NULL if none.
+ * memory:    the returned request need to be freed by the caller.
+ */
+struct request* get_request(pthread_mutex_t* p_mutex) {
+    int rc;                         /* return code of pthreads functions.  */
+    struct request* a_request;      /* pointer to request.                 */
+
+    /* lock the mutex, to assure exclusive access to the list */
+    rc = pthread_mutex_lock(p_mutex);
+
+    if (num_requests > 0) {
+        a_request = requests;
+        requests = a_request->next;
+        if (requests == NULL) { /* this was the last request on the list */
+            last_request = NULL;
+        }
+        /* decrease the total number of pending requests */
+        num_requests--;
+    }
+    else { /* requests list is empty */
+        a_request = NULL;
+    }
+
+    /* unlock mutex */
+    rc = pthread_mutex_unlock(p_mutex);
+
+    /* return the request to the caller. */
+    return a_request;
+}
+
+void* handleResponseLoop(void* data) {
+    int rc;
+    struct request* a_request;
+    int thread_id = *((int*) data);
+
+    rc = pthread_mutex_lock(&request_mutex);
+
+    while (1) {
+        if (num_requests > 0) {
+            a_request = get_request(&request_mutex);
+            if (a_request) {
+                rc = pthread_mutex_unlock(&request_mutex);
+                handleResponse(a_request, thread_id);
+                free(a_request);
+                rc = pthread_mutex_lock(&request_mutex);
+            }
+        } else {
+            rc = pthread_cond_wait(&got_request, &request_mutex);
+        }
+    }
+}
 
 uint16_t serverPort;
 int sockfd, new_fd;
@@ -76,6 +191,16 @@ int main(int argc, char ** argv) {
 
     printf("Server is listening on port %d \n", serverPort);
 
+
+    int        thr_id[BACKLOG];      /* thread IDs            */
+    pthread_t  p_threads[BACKLOG];   /* thread's structures   */
+
+    /* create the request-handling threads */
+    for (int i = 0; i < BACKLOG; i++) {
+        thr_id[i] = i;
+        pthread_create(&p_threads[i], NULL, handleResponseLoop, (void*)&thr_id[i]);
+    }
+
     while (1) {
         sin_size = sizeof(struct sockaddr_in);
         if ((new_fd = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size)) == -1) {
@@ -83,7 +208,7 @@ int main(int argc, char ** argv) {
             continue;
         }
         printf("Got a connection from: %s\n", inet_ntoa(their_addr.sin_addr));
-        pthread_create(&client_thread, NULL, handleResponse, &new_fd);
+        add_request(&new_fd, &request_mutex, &got_request);
     }
 
     return 0;
@@ -137,8 +262,8 @@ void formatWords(StrPair * randomWordPair, char guesses[GUESSED_LETTERS_LENGTH],
     formattedWords[index] = '\0';
 }
 
-void * handleResponse(void * socket_id) {
-    int sock = *(int *) socket_id;
+void * handleResponse(struct request* a_request, int thread_id) {
+    int sock = a_request->socket_id;
     DataPacket inputPacket;
 
     while (recv(sock, &inputPacket, sizeof(DataPacket), 0) > 0) {
