@@ -1,3 +1,7 @@
+#ifndef __APPLE__
+#define _GNU_SOURCE
+#endif
+
 #include "server.h"
 
 #include <stdio.h>
