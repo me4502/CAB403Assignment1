@@ -405,7 +405,22 @@ void * handleResponse(struct request * a_request, int thread_id) {
                 int length;
                 LeaderboardEntry ** leaderboardArray = (LeaderboardEntry **) getValues(scores, sizeof(LeaderboardEntry),
                                                                                        &length);
-                // TODO Sort
+
+                if (length > 1) {
+                    for (int i = length - 1; i > 0; i--) {
+                        for (int j = 0; j < i; ++j) {
+                            LeaderboardEntry * a = leaderboardArray[j];
+                            LeaderboardEntry * b = leaderboardArray[j + 1];
+                            if (a->wins > b->wins
+                                || (a->wins == b->wins && (a->wins / (float) a->games) > (b->wins / (float) b->games))
+                                || strcmp(a->username, b->username) > 0) {
+                                leaderboardArray[j + 1] = b;
+                                leaderboardArray[j] = a;
+                            }
+                        }
+                    }
+                }
+
                 for (int i = 0; i < length; i++) {
                     LeaderboardEntry * leaderboardEntry = leaderboardArray[i];
 
