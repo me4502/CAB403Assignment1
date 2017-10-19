@@ -28,8 +28,10 @@ List gameSessions;
 // Mutexes are different on macOS for some reason
 #ifdef __APPLE__
 pthread_mutex_t request_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
+pthread_mutex_t scores_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
 #else
 pthread_mutex_t request_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+pthread_mutex_t scores_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 #endif
 
 pthread_cond_t got_request = PTHREAD_COND_INITIALIZER;
@@ -407,8 +409,10 @@ void * handleResponse(struct request * a_request, int thread_id) {
                 send(sock, &packet, sizeof(DataPacket), 0);
 
                 int length;
+                pthread_mutex_lock(&scores_mutex);
                 LeaderboardEntry ** leaderboardArray = (LeaderboardEntry **) getValues(scores, sizeof(LeaderboardEntry),
                                                                                        &length);
+                pthread_mutex_unlock(&scores_mutex);
 
                 if (length > 1) {
                     for (int i = length - 1; i > 0; i--) {
@@ -466,12 +470,16 @@ void * handleResponse(struct request * a_request, int thread_id) {
 }
 
 LeaderboardEntry * getScoreForPlayer(char username[USERNAME_MAX_LENGTH]) {
+    pthread_mutex_lock(&scores_mutex);
     LeaderboardEntry * entry = getValue(scores, username);
+    pthread_mutex_unlock(&scores_mutex);
     if (entry == NULL) {
         entry = malloc(sizeof(LeaderboardEntry));
         entry->games = 0;
         entry->wins = 0;
+        pthread_mutex_lock(&scores_mutex);
         putEntry(scores, username, entry);
+        pthread_mutex_unlock(&scores_mutex);
     }
 
     return entry;
