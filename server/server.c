@@ -24,9 +24,6 @@ Map scores;
 List currentSessions;
 List gameSessions;
 
-int _DIENOW = 0;
-int _DEAD = 0;
-
 
 // Mutexes are different on macOS for some reason
 #ifdef __APPLE__
@@ -120,7 +117,7 @@ void * handleResponseLoop(void * data) {
 
     pthread_mutex_lock(&request_mutex);
 
-    while (!_DIENOW) {
+    while (1) {
         if (num_requests > 0) {
             a_request = get_request(&request_mutex);
             if (a_request) {
@@ -133,7 +130,6 @@ void * handleResponseLoop(void * data) {
             pthread_cond_wait(&got_request, &request_mutex);
         }
     }
-    _DEAD++;
 }
 
 uint16_t serverPort;
@@ -606,10 +602,6 @@ void interruptHandler(int signal) {
 }
 
 void finishUp() {
-    _DIENOW = 1;
-    while (_DEAD < BACKLOG) {
-        sleep(10);
-    }
     freeMap(accounts);
     freeList(words);
     freeList(gameSessions);
