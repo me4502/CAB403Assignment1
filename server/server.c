@@ -133,7 +133,7 @@ void * handleResponseLoop(void * data) {
             pthread_cond_wait(&got_request, &request_mutex);
         }
     }
-    DEAD++;
+    _DEAD++;
 }
 
 uint16_t serverPort;
@@ -607,7 +607,7 @@ void interruptHandler(int signal) {
 
 void finishUp() {
     _DIENOW = 1;
-    while (DEAD < BACKLOG) {
+    while (_DEAD < BACKLOG) {
         sleep(10);
     }
     freeMap(accounts);
