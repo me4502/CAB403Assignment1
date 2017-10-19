@@ -414,8 +414,8 @@ void * handleResponse(struct request * a_request, int thread_id) {
                             if (a->wins > b->wins
                                 || (a->wins == b->wins && (a->wins / (float) a->games) > (b->wins / (float) b->games))
                                 || strcmp(a->username, b->username) > 0) {
-                                leaderboardArray[j + 1] = b;
-                                leaderboardArray[j] = a;
+                                leaderboardArray[j + 1] = a;
+                                leaderboardArray[j] = b;
                             }
                         }
                     }

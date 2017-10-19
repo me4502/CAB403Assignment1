@@ -179,7 +179,7 @@ int _displayLeaderboardSegment() {
         for (int i = 0; i < 77; i++) {
             printf("=");
         }
-        printf("\n\n\n");
+        printf("\n");
     } else {
         error("Received unexpected packet!");
         return -1;
