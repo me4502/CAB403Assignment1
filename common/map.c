@@ -99,9 +99,9 @@ void ** getValues(Map map, size_t size, int * length) {
         if (map->entries[i] == NULL) {
             continue;
         }
-        values[index ++] = map->entries[i]->value;
+        values[index++] = map->entries[i]->value;
     }
-    (* length) = index;
+    (*length) = index;
 
     return values;
 }

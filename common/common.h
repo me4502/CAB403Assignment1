@@ -9,7 +9,7 @@
 #define GUESSED_LETTERS_LENGTH 26
 #define CURRENT_GUESS_LENGTH 32
 
-#define min(a,b) ((a) > (b) ? (b) : (a))
+#define min(a, b) ((a) > (b) ? (b) : (a))
 
 #include <stdbool.h>
 #include <stdint.h>

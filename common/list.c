@@ -38,8 +38,9 @@ void removeAt(List list, int index) {
         return;
     }
 
-    memmove(list->values + index, list->values + (index + 1), (size_t) (list->arrayLength - index) * sizeof(*(list->values)));
-    list->length --;
+    memmove(list->values + index, list->values + (index + 1),
+            (size_t) (list->arrayLength - index) * sizeof(*(list->values)));
+    list->length--;
 }
 
 void freeList(List list) {

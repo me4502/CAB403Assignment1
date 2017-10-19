@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "server.h"
 
 #include <stdio.h>
@@ -22,115 +21,107 @@ List currentSessions;
 List gameSessions;
 
 
-/* global mutex for our program. assignment initializes it. */
-/* note that we use a RECURSIVE mutex, since a handler      */
-/* thread might try to lock it twice consecutively.         */
+// Mutexes are different on macOS for some reason
+#ifdef __APPLE__
+pthread_mutex_t request_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
+#else
 pthread_mutex_t request_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+#endif
 
-/* global condition variable for our program. assignment initializes it. */
-pthread_cond_t  got_request   = PTHREAD_COND_INITIALIZER;
-int num_requests = 0; // Pending requests
-struct request* requests = NULL;     /* head of linked list of requests. */
-struct request* last_request = NULL; /* pointer to last request.         */
+pthread_cond_t got_request = PTHREAD_COND_INITIALIZER;
+int num_requests = 0;
+struct request * requests = NULL;
+struct request * last_request = NULL;
 
-/*
- * function add_request(): add a request to the requests list
- * algorithm: creates a request structure, adds to the list, and
- *            increases number of pending requests by one.
- * input:     request number, linked list mutex.
- * output:    none.
+/**
+ * Add a request to the requests list
+ *
+ * Creates a request structure, adds to the list, and increases number of pending requests by one.
+ *
+ * @param socket_id The socket ID
+ * @param p_mutex The mutex linked list
+ * @param p_cond_var The thread condition
  */
-void add_request(int socket_id, pthread_mutex_t* p_mutex, pthread_cond_t*  p_cond_var) {
-    int rc;                         /* return code of pthreads functions.  */
-    struct request* a_request;      /* pointer to newly added request.     */
-
-    /* create structure with new request */
-    a_request = (struct request*)malloc(sizeof(struct request));
-    if (!a_request) { /* malloc failed?? */
-        fprintf(stderr, "add_request: out of memory\n");
-        exit(1);
+void add_request(int socket_id, pthread_mutex_t * p_mutex, pthread_cond_t * p_cond_var) {
+    // Create the new request
+    struct request * newRequest = (struct request *) malloc(sizeof(struct request));
+    if (!newRequest) {
+        error("Out of memory");
+        return;
     }
-    a_request->socket_id = socket_id;
-    a_request->next = NULL;
+    newRequest->socket_id = socket_id;
+    newRequest->next = NULL;
 
-    /* lock the mutex, to assure exclusive access to the list */
-    rc = pthread_mutex_lock(p_mutex);
+    pthread_mutex_lock(p_mutex);
 
-    /* add new request to the end of the list, updating list */
-    /* pointers as required */
-    if (num_requests == 0) { /* special case - list is empty */
-        requests = a_request;
-        last_request = a_request;
-    }
-    else {
-        last_request->next = a_request;
-        last_request = a_request;
+    // Add the new request to the list
+    if (num_requests == 0) {
+        requests = newRequest;
+        last_request = newRequest;
+    } else {
+        last_request->next = newRequest;
+        last_request = newRequest;
     }
 
-    /* increase total number of pending requests by one. */
     num_requests++;
 
-    /* unlock mutex */
-    rc = pthread_mutex_unlock(p_mutex);
-
-    /* signal the condition variable - there's a new request to handle */
-    rc = pthread_cond_signal(p_cond_var);
+    pthread_mutex_unlock(p_mutex);
+    pthread_cond_signal(p_cond_var);
 }
 
-/*
- * function get_request(): gets the first pending request from the requests list
- *                         removing it from the list.
- * algorithm: creates a request structure, adds to the list, and
- *            increases number of pending requests by one.
- * input:     request number, linked list mutex.
- * output:    pointer to the removed request, or NULL if none.
- * memory:    the returned request need to be freed by the caller.
+/**
+ * Gets the first pending request from the requests list
+ * removing it from the list.
+ *
+ * Creates a request structure, adds to the list, and
+ * increases number of pending requests by one.
+ *
+ * <p>
+ *      The returned memory must be freed.
+ * </p>
+ *
+ * @param p_mutex The linked list mutex
+ * @return The removed request, or NULL
  */
-struct request* get_request(pthread_mutex_t* p_mutex) {
-    int rc;                         /* return code of pthreads functions.  */
-    struct request* a_request;      /* pointer to request.                 */
+struct request * get_request(pthread_mutex_t * p_mutex) {
+    struct request * a_request;
 
-    /* lock the mutex, to assure exclusive access to the list */
-    rc = pthread_mutex_lock(p_mutex);
+    pthread_mutex_lock(p_mutex);
 
     if (num_requests > 0) {
         a_request = requests;
         requests = a_request->next;
-        if (requests == NULL) { /* this was the last request on the list */
+        if (requests == NULL) {
             last_request = NULL;
         }
-        /* decrease the total number of pending requests */
+
         num_requests--;
-    }
-    else { /* requests list is empty */
+    } else {
         a_request = NULL;
     }
 
-    /* unlock mutex */
-    rc = pthread_mutex_unlock(p_mutex);
+    pthread_mutex_unlock(p_mutex);
 
-    /* return the request to the caller. */
     return a_request;
 }
 
-void* handleResponseLoop(void* data) {
-    int rc;
-    struct request* a_request;
-    int thread_id = *((int*) data);
+void * handleResponseLoop(void * data) {
+    struct request * a_request;
+    int thread_id = *((int *) data);
 
-    rc = pthread_mutex_lock(&request_mutex);
+    pthread_mutex_lock(&request_mutex);
 
     while (1) {
         if (num_requests > 0) {
             a_request = get_request(&request_mutex);
             if (a_request) {
-                rc = pthread_mutex_unlock(&request_mutex);
+                pthread_mutex_unlock(&request_mutex);
                 handleResponse(a_request, thread_id);
                 free(a_request);
-                rc = pthread_mutex_lock(&request_mutex);
+                pthread_mutex_lock(&request_mutex);
             }
         } else {
-            rc = pthread_cond_wait(&got_request, &request_mutex);
+            pthread_cond_wait(&got_request, &request_mutex);
         }
     }
 }
@@ -144,7 +135,6 @@ int main(int argc, char ** argv) {
     struct sockaddr_in my_addr;
     struct sockaddr_in their_addr;
     socklen_t sin_size;
-    pthread_t client_thread;
     signal(SIGINT, interruptHandler);
     signal(SIGHUP, interruptHandler);
 
@@ -157,20 +147,24 @@ int main(int argc, char ** argv) {
             break;
         default:
             error("Too many arguments provided");
+            return -1;
     }
 
     validatePort(serverPort);
 
     if (loadAccounts() != 0) {
         error("Failed to load accounts");
+        return -1;
     }
 
     if (loadWords() != 0) {
         error("Failed to load words list");
+        return -1;
     }
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         error("Failed to create socket");
+        return -1;
     }
 
     my_addr.sin_family = AF_INET;
@@ -179,10 +173,12 @@ int main(int argc, char ** argv) {
 
     if (bind(sockfd, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) == -1) {
         error("Failed to bind to port");
+        return -1;
     }
 
     if (listen(sockfd, BACKLOG) == -1) {
         error("Failed to listen on socket");
+        return -1;
     }
 
     currentSessions = createList(4, sizeof(SessionStore));
@@ -192,13 +188,12 @@ int main(int argc, char ** argv) {
     printf("Server is listening on port %d \n", serverPort);
 
 
-    int        thr_id[BACKLOG];      /* thread IDs            */
-    pthread_t  p_threads[BACKLOG];   /* thread's structures   */
+    int threadIds[BACKLOG];
+    pthread_t p_threads[BACKLOG];
 
-    /* create the request-handling threads */
     for (int i = 0; i < BACKLOG; i++) {
-        thr_id[i] = i;
-        pthread_create(&p_threads[i], NULL, handleResponseLoop, (void*)&thr_id[i]);
+        threadIds[i] = i;
+        pthread_create(&p_threads[i], NULL, handleResponseLoop, (void *) &threadIds[i]);
     }
 
     while (1) {
@@ -208,7 +203,7 @@ int main(int argc, char ** argv) {
             continue;
         }
         printf("Got a connection from: %s\n", inet_ntoa(their_addr.sin_addr));
-        add_request(&new_fd, &request_mutex, &got_request);
+        add_request(new_fd, &request_mutex, &got_request);
     }
 
     return 0;
@@ -237,32 +232,32 @@ ServerGameState * _getStateBySession(int session) {
 
 void formatWords(StrPair * randomWordPair, char guesses[GUESSED_LETTERS_LENGTH],
                  char formattedWords[CURRENT_GUESS_LENGTH], int * remainingSpots) {
-    (* remainingSpots) = 0;
+    (*remainingSpots) = 0;
     int index = 0;
     for (int i = 0; i < strlen(randomWordPair->a); i++) {
         if (strchr(guesses, randomWordPair->a[i])) {
-            formattedWords[index ++] = randomWordPair->a[i];
+            formattedWords[index++] = randomWordPair->a[i];
         } else {
-            formattedWords[index ++] = '_';
-            (* remainingSpots) ++;
+            formattedWords[index++] = '_';
+            (*remainingSpots)++;
         }
-        formattedWords[index ++] = ' ';
+        formattedWords[index++] = ' ';
     }
-    formattedWords[index ++] = ' ';
-    formattedWords[index ++] = ' ';
+    formattedWords[index++] = ' ';
+    formattedWords[index++] = ' ';
     for (int i = 0; i < strlen(randomWordPair->b); i++) {
         if (strchr(guesses, randomWordPair->b[i])) {
-            formattedWords[index ++] = randomWordPair->b[i];
+            formattedWords[index++] = randomWordPair->b[i];
         } else {
-            formattedWords[index ++] = '_';
-            (* remainingSpots) ++;
+            formattedWords[index++] = '_';
+            (*remainingSpots)++;
         }
-        formattedWords[index ++] = ' ';
+        formattedWords[index++] = ' ';
     }
     formattedWords[index] = '\0';
 }
 
-void * handleResponse(struct request* a_request, int thread_id) {
+void * handleResponse(struct request * a_request, int thread_id) {
     int sock = a_request->socket_id;
     DataPacket inputPacket;
 
@@ -317,7 +312,7 @@ void * handleResponse(struct request* a_request, int thread_id) {
                     printf("Non-logged in user tried to start a game!");
                     break;
                 }
-                StrPair *randomWordPair = (StrPair *) getValueAt(words, (int) (random() % words->length));
+                StrPair * randomWordPair = (StrPair *) getValueAt(words, (int) (random() % words->length));
 
                 ServerGameState serverState;
                 serverState.session = inputPacket.session;
@@ -351,7 +346,7 @@ void * handleResponse(struct request* a_request, int thread_id) {
                 TakeTurnPayload takeTurnPayload;
                 recv(sock, &takeTurnPayload, sizeof(TakeTurnPayload), 0);
 
-                ServerGameState *serverState = _getStateBySession(inputPacket.session);
+                ServerGameState * serverState = _getStateBySession(inputPacket.session);
                 if (serverState == NULL) {
                     printf("Got invalid session %d", inputPacket.session);
                     break;
@@ -408,7 +403,8 @@ void * handleResponse(struct request* a_request, int thread_id) {
                 send(sock, &packet, sizeof(DataPacket), 0);
 
                 int length;
-                LeaderboardEntry ** leaderboardArray = (LeaderboardEntry **) getValues(scores, sizeof(LeaderboardEntry), &length);
+                LeaderboardEntry ** leaderboardArray = (LeaderboardEntry **) getValues(scores, sizeof(LeaderboardEntry),
+                                                                                       &length);
                 // TODO Sort
                 for (int i = 0; i < length; i++) {
                     LeaderboardEntry * leaderboardEntry = leaderboardArray[i];

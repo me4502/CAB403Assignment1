@@ -209,7 +209,7 @@ void _drawLeaderboardScreen() {
         if (_displayLeaderboardSegment() == -1) {
             break;
         } else {
-            drawnEntries ++;
+            drawnEntries++;
         }
     }
 

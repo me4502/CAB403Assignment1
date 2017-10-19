@@ -14,10 +14,10 @@ typedef struct server_game_state {
     char guessedLetters[GUESSED_LETTERS_LENGTH];
 } ServerGameState;
 
-/* format of a single request. */
+// format of a single request.
 struct request {
-    int socket_id;             /* number of the request                  */
-    struct request* next;   /* pointer to next request, NULL if none. */
+    int socket_id;
+    struct request * next;
 };
 
 
@@ -56,4 +56,4 @@ LeaderboardEntry * getScoreForPlayer(char username[USERNAME_MAX_LENGTH]);
  */
 void finishUp();
 
-void * handleResponse(struct request* a_request, int thread_id);
+void * handleResponse(struct request * a_request, int thread_id);
