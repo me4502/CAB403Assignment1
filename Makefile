@@ -1,5 +1,5 @@
 CC := gcc
-CCFLAGS := -Wall -Werror -O3
+CCFLAGS := -Wall -Werror -O0
 LDFLAGS := -lpthread
 
 all: run_server run_client

@@ -212,6 +212,8 @@ int main(int argc, char ** argv) {
         add_request(new_fd, &request_mutex, &got_request);
     }
 
+    // In the off chance this is somehow reached, cleanup the server.
+    finishUp();
     return 0;
 }
 
@@ -595,7 +597,7 @@ int loadWords() {
 void interruptHandler(int signal) {
     if (signal == SIGINT || signal == SIGHUP) {
         // I put the \n at the start so it reads nicer :)
-        printf("\nReceived interrupt\nI should exit cleanly now.\n");
+        printf("\nShutting down server.\n");
         finishUp();
         exit(0);
     }
